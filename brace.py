@@ -1,4 +1,4 @@
-import bpy
+import bøpy
 import bmesh
 import math
 import numpy as np
