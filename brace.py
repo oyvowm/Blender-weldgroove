@@ -1,10 +1,17 @@
-import bøpy
+import bpy
 import bmesh
 import math
 import numpy as np
 from mathutils import Vector, Euler, Matrix, Quaternion
 
+
 def add_brace_element(groove_angle):
+    """
+    Adds a brace element to the scene
+    
+    Args:
+        groove_angle (int): the groove angle of the brace element
+    """
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0), scale=(1, 1, 1))
 
     brace = bpy.context.active_object
@@ -48,7 +55,9 @@ def add_brace_element(groove_angle):
     return brace
 
 def add_leg_element():
-    # defining leg object
+    """
+    Adds a leg element to the scene.
+    """
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0.015))
     leg = bpy.context.active_object
     leg.scale[0] = 0.3
@@ -63,6 +72,18 @@ def add_leg_element():
     return leg
 
 def rotate_brace_element(brace, leg, y, groove_dist, circle_radius, degrees):
+    """
+    Function that translates the brace element along the curvature of the leg element, moves it back onto the leg element, and then rotates it.
+    
+    Args:
+        brace: the brace element
+        leg: the leg element
+        y (float): the distance to move the brace element along the y-axis
+        groove_dist (float): distance between brace- and leg element
+        circle_radius (float): radius of imaginary cylider of which leg is a part
+        degrees (float): number of degrees to rotate the brace element 
+    """
+    circle_radius = -circle_radius
     # translating the brace element
     brace.location[1] += y
     
@@ -95,36 +116,41 @@ def rotate_brace_element(brace, leg, y, groove_dist, circle_radius, degrees):
     mat = (Matrix.Translation(cursor_loc) @
            Matrix.Rotation(math.radians(degrees), 4, 'X') @
            Matrix.Translation(-cursor_loc))
+           
 
     # rotating the object around the cursor point and global x-axis
     brace.matrix_basis = mat @ brace.matrix_basis
 
-    bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
 
-    bpy.ops.object.editmode_toggle()
+    # if one wishes to reset the cursor location
+    #bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
 
+    
+    # just to ensure that new distance = groove_dist
+    #rotation_edge2 = [rotation_edge[0] + fraction_to_move * vector_edge_to_cc[0], rotation_edge[1] + fraction_to_move * vector_edge_to_cc[1]]
+    #vector_edge_to_cc2 = [circle_center[0] - rotation_edge2[0], circle_center[1] - rotation_edge2[1]]
+    #edge_to_cc2 = np.sqrt((vector_edge_to_cc2[0])**2 + (vector_edge_to_cc2[1])**2)
+    #new_distance = np.abs(np.abs(circle_center[1]) - edge_to_cc2) - leg.scale[1]
+    #print(f'new distance: {new_distance}')
 
-
-'''
-# just to ensure that new distance = groove_dist
-#rotation_edge2 = [rotation_edge[0] + fraction_to_move * vector_edge_to_cc[0], rotation_edge[1] + fraction_to_move * vector_edge_to_cc[1]]
-#vector_edge_to_cc2 = [circle_center[0] - rotation_edge2[0], circle_center[1] - rotation_edge2[1]]
-#edge_to_cc2 = np.sqrt((vector_edge_to_cc2[0])**2 + (vector_edge_to_cc2[1])**2)
-#new_distance = np.abs(np.abs(circle_center[1]) - edge_to_cc2) - leg.scale[1]
-#print(f'new distance: {new_distance}')
-
-#bpy.ops.transform.translate(value=(0, 0.015 + y, 0.23), orient_type='GLOBAL')
-'''
+    #bpy.ops.transform.translate(value=(0, 0.015 + y, 0.23), orient_type='GLOBAL')
+    
 
 if __name__ == "__main__":
-    if len(bpy.data.objects) > 0:
-        bpy.ops.object.mode_set(mode="OBJECT")
-        bpy.ops.object.select_all(action="SELECT")
-        bpy.ops.object.delete(use_global=False)
+    
+    # deselects all objects
+    bpy.ops.object.select_all(action='DESELECT')
+
+    # deletes any pre-existing brace or leg elements
+    for obj in bpy.data.objects:
+        if obj.name[:5] == "Plane":
+            obj.select_set(True)
+    bpy.ops.object.delete()
+    
     
     brace = add_brace_element(45)
     leg = add_leg_element()
     
-    rotate_brace_element(brace, leg, 0.9, 0.01, -0.8, -5)
+    rotate_brace_element(brace, leg, 0.8, 0.01, 0.8, -5)
     
     
