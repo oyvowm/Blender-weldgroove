@@ -27,7 +27,7 @@ def define_material(material_name):
     base_color = nodes.new(type="ShaderNodeTexImage")
     base_color.location = [-400, 300]
     base_color.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_BaseColor.png")
-    base_color.projection = 'SPHERE'
+    base_color.projection = 'FLAT'
     links = new_material.node_tree.links
     links.new(base_color.outputs[0], BSDF.inputs['Base Color'])
 
@@ -35,7 +35,7 @@ def define_material(material_name):
     Roughness = nodes.new(type="ShaderNodeTexImage")
     Roughness.location = [-400, 40]
     Roughness.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_Roughness.png")
-    Roughness.projection = 'SPHERE'
+    Roughness.projection = 'FLAT'
     Roughness.image.colorspace_settings.name = 'Non-Color'
     links.new(Roughness.outputs[0], BSDF.inputs['Roughness'])
 
@@ -43,7 +43,7 @@ def define_material(material_name):
     Normal = nodes.new(type="ShaderNodeTexImage")
     Normal.location = [-400, -220]
     Normal.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_Normal.png")
-    Normal.projection = 'SPHERE'
+    Normal.projection = 'FLAT'
     Normal.image.colorspace_settings.name = 'Non-Color'
     links.new(Normal.outputs[0], BSDF.inputs['Normal'])
 
@@ -57,12 +57,20 @@ def define_material(material_name):
     # adds a texture coordinate node
     texture_coordinate = nodes.new(type="ShaderNodeTexCoord")
     texture_coordinate.location = [mapper.location[0] - 200, mapper.location[1]]
-    links.new(texture_coordinate.outputs[0], mapper.inputs[0])
+    links.new(texture_coordinate.outputs[2], mapper.inputs[0])
+    
+    
     
     return new_material
 
 if __name__ == "__main__":
     mat = define_material("Galvanized Steel")
+    
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_linked(delimit={'SEAM'})
+    #bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project()
+    bpy.ops.object.editmode_toggle()
     
     # makes the newly defined material the active one
     if bpy.context.active_object.data.materials:
