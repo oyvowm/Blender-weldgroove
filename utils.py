@@ -1,5 +1,5 @@
 import bpy
-import numpy
+import numpy as np
 
 
 def delete_object(object):
