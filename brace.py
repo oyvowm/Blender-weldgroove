@@ -8,11 +8,17 @@ from mathutils import Vector, Euler, Matrix, Quaternion
 
 class WeldGroove():
     
-    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.03, groove_width=0.3, circle_radius=0.8, brace_rotation=20):
-       
+    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.03, 
+                 groove_width=0.3, circle_radius=0.8, brace_rotation=20):
+        
+        assert groove_angle + brace_rotation > 0, "The given values gives no groove opening"
+        
+        self.groove_angle = groove_angle
+        self.brace_rotation = brace_rotation
+        
         self.brace = self.add_brace_element(groove_angle, groove_width, groove_dist, brace_height, element_thickness)
         self.leg = self.add_leg_element(groove_width, element_thickness)
-        self.rotation_edge = self.rotate_brace_element(groove_dist, circle_radius, brace_rotation, brace_height)
+        self.rotation_edge = self.rotate_brace_element(groove_dist, circle_radius, self.brace_rotation, brace_height)
         
     def add_brace_element(self, groove_angle, groove_width, groove_dist, brace_height, brace_thickness):
         """
@@ -61,7 +67,7 @@ class WeldGroove():
         
         bpy.ops.object.editmode_toggle()
         
-        #bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
         return brace
 
     def add_leg_element(self, groove_width, leg_thickness):

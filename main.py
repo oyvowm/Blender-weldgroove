@@ -21,7 +21,7 @@ if len(bpy.data.objects) > 0:
     #            obj.select_set(False)
     bpy.ops.object.delete(use_global=False)
     
-weld_groove = groove.WeldGroove(45, brace_rotation=70)
+weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.0, brace_rotation=-19)
 
 #brace = groove.add_brace_element(45, 0.01)
 #leg = groove.add_leg_element()
@@ -45,7 +45,7 @@ weld_groove.apply_smart_projection(weld_groove.brace)
 weld_groove.apply_smart_projection(weld_groove.leg)
 
 # adds laser scanner + camera setup    
-scanner = laser_setup.LaserSetup("cycles", 45)
+scanner = laser_setup.LaserSetup("cycles", weld_groove.groove_angle + weld_groove.brace_rotation)
 angle = scanner.move_laser_to_groove()
 
 #bpy.ops.object.select_all(action='DESELECT')

@@ -2,6 +2,7 @@ import bpy
 import random
 from mathutils import Matrix
 from math import radians, cos, sin, atan, pi
+from scipy.stats import truncnorm
 
 class LaserSetup():
     
@@ -9,7 +10,7 @@ class LaserSetup():
         if laser_type == "cycles":
             self.laser = self.create_cycles_laser()
         
-        self.groove_angle = groove_angle
+        self.groove_angle = radians(groove_angle)
         self.camera = self.add_camera()
         self.camera.parent = self.laser
         self.min_dist = min_dist
@@ -84,10 +85,20 @@ class LaserSetup():
         # where to place the laser along the width of the groove
         x_location = 0
         
-        # moves laser by a random angle
+        # limits how acute the angle between the laser and groove faces can be
+        acute = self.groove_angle * 0.1
         
-        # TODO: fix so that it takes the rotation of the brace into account
-        angle = random.uniform(0, radians(self.groove_angle))
+        # moves laser by a random angle drawn from a truncated normal distribution
+        
+        mean = self.groove_angle / 2
+        sigma = self.groove_angle / 4
+        lower = 0 + acute
+        upper = self.groove_angle - acute
+        
+        normal = truncnorm((lower - mean) / sigma, (upper - mean) / sigma, loc = mean, scale = sigma)
+        
+        # samples one number from the distribution
+        angle = normal.rvs(1)
         
         direction_vector = (cos(angle), sin(angle))
         
@@ -133,8 +144,8 @@ class LaserSetup():
         print(angle, 'angle')
         
         # intrinsic parameters
-        sensor_width = random.uniform(10,15)
-        focal_length = random.uniform(15,25)
+        sensor_width = random.uniform(19,22)
+        focal_length = random.uniform(20,25)
 
         # sets the sensor size of the camera
         camera.data.sensor_width = sensor_width
@@ -142,7 +153,7 @@ class LaserSetup():
         # sets the focal length of the camera
         camera.data.lens = focal_length
 
-        mat = Matrix.Translation((-translation, 0, 0)) @ Matrix.Rotation(-angle, 4, 'Y')
+        mat = Matrix.Rotation(pi, 4, 'Z') @ Matrix.Translation((-translation, 0, 0)) @ Matrix.Rotation(-angle, 4, 'Y')
 
         camera.matrix_world = camera.matrix_world @ mat
         
