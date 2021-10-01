@@ -28,7 +28,7 @@ weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.0, brace_rotation
 #groove.rotate_brace_element(brace, leg, 0.9, 0.01, 0.8, 20)
 
 
-mat = material.define_material("Galvanized Steel")
+mat = material.define_material("galvanized_steel_01/GalvanizedSteel01_4K")
 
 # makes the newly defined material the active one
 if weld_groove.brace.data.materials:

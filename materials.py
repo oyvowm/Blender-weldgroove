@@ -1,5 +1,5 @@
 import bpy
-
+import os
 # Add in a variable for the file paths later
 def define_material(material_name):
     
@@ -22,11 +22,13 @@ def define_material(material_name):
     BSDF = nodes.get("Principled BSDF")
 
     # adds image texture nodes
+    
+    root = "/home/oyvmjo/Blender-weldgroove/pbr/"
 
     # Base Colour
     base_color = nodes.new(type="ShaderNodeTexImage")
     base_color.location = [-400, 300]
-    base_color.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_BaseColor.png")
+    base_color.image = bpy.data.images.load(os.path.join(root, material_name) + "_BaseColor.png")
     base_color.projection = 'FLAT'
     links = new_material.node_tree.links
     links.new(base_color.outputs[0], BSDF.inputs['Base Color'])
@@ -34,7 +36,7 @@ def define_material(material_name):
     # Roughness
     Roughness = nodes.new(type="ShaderNodeTexImage")
     Roughness.location = [-400, 40]
-    Roughness.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_Roughness.png")
+    Roughness.image = bpy.data.images.load(os.path.join(root, material_name) + "_Roughness.png")
     Roughness.projection = 'FLAT'
     Roughness.image.colorspace_settings.name = 'Non-Color'
     links.new(Roughness.outputs[0], BSDF.inputs['Roughness'])
@@ -42,7 +44,7 @@ def define_material(material_name):
     # Normal
     Normal = nodes.new(type="ShaderNodeTexImage")
     Normal.location = [-400, -220]
-    Normal.image = bpy.data.images.load("C:\\Users\\oyvin\\Documents\\blender\\galvanized_steel\\GalvanizedSteel01_4K_Normal.png")
+    Normal.image = bpy.data.images.load(os.path.join(root, material_name) + "_Normal.png")
     Normal.projection = 'FLAT'
     Normal.image.colorspace_settings.name = 'Non-Color'
     links.new(Normal.outputs[0], BSDF.inputs['Normal'])
