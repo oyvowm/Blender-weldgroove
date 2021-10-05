@@ -1,6 +1,95 @@
 import bpy
 import os
 # Add in a variable for the file paths later
+'''
+class define_material():
+    def __init__(self, material_name, func):
+        #self.material_name = material_name
+        self.root = "/home/oyvind/Blender-weldgroove/pbr/" 
+        
+        # overwrites any existing materials of the same name
+        if material_name in bpy.data.materials:
+            new_material = bpy.data.materials[material_name]
+        else:
+            new_material = bpy.data.materials.new(name=material_name)
+            
+        self.mat = func(material_name, root)
+
+'''     
+
+def luxcore(material_name):
+    # overwrites any existing materials of the same name
+    if material_name in bpy.data.materials:
+        new_material = bpy.data.materials[material_name]
+    else:
+        new_material = bpy.data.materials.new(name=material_name)
+        
+    tree_name = "Nodes_" + new_material.name
+    node_tree = bpy.data.node_groups.new(name=tree_name, type="luxcore_material_nodes")
+    new_material.luxcore.node_tree = node_tree
+
+    # User counting does not work reliably with Python PointerProperty.
+    # Sometimes, the material this tree is linked to is not counted as user.
+    node_tree.use_fake_user = True    
+
+    nodes = node_tree.nodes
+    
+    # output node
+    output = nodes.new("LuxCoreNodeMatOutput")
+    
+    # "disney" node
+    disney = nodes.new("LuxCoreNodeMatDisney")
+    disney.location = (-290, 100)
+    links = node_tree.links
+    links.new(disney.outputs[0], output.inputs[0])
+
+    # image texture nodes
+    root = "/home/oyvind/Blender-weldgroove/pbr/"
+    
+    base_colour = nodes.new("LuxCoreNodeTexImagemap")
+    base_colour.image = bpy.data.images.load(os.path.join(root, "brushed_iron_01") + "/BrushedIron01_4K_BaseColor.png")
+    base_colour.location = (-550, 700)
+    links.new(base_colour.outputs[0], disney.inputs[0])
+    
+    roughness = nodes.new("LuxCoreNodeTexImagemap")
+    roughness.image = bpy.data.images.load(os.path.join(root, "brushed_iron_01") + "/BrushedIron01_4K_Roughness.png")
+    roughness.location = (-550, 250)
+    roughness.gamma = 1.0
+    links.new(roughness.outputs[0], disney.inputs[5])
+    
+    normal = nodes.new("LuxCoreNodeTexImagemap")
+    normal.image  =bpy.data.images.load(os.path.join(root, "brushed_iron_01") + "/BrushedIron01_4K_Normal.png")
+    normal.location = (-550, -200)
+    normal.gamma = 1.0
+    links.new(normal.outputs[0], disney.inputs[-2])
+'''
+node_tree.links.new(glossy2.outputs[0], output.inputs[0])
+
+# Load image, for docs on this see https://docs.blender.org/api/current/bpy_extras.image_utils.html#module-bpy_extras.image_utils
+import bpy_extras
+diffuse_img = bpy_extras.image_utils.load_image("/home/simon/Downloads/diamond_CPU.jpg")
+
+# Create imagemap node
+diffuse_img_node = nodes.new("LuxCoreNodeTexImagemap")
+diffuse_img_node.location = -200, 200
+diffuse_img_node.image = diffuse_img
+node_tree.links.new(diffuse_img_node.outputs[0], glossy2.inputs["Diffuse Color"])
+
+###############################################################
+
+# Assign to object (if you want)
+obj = bpy.context.active_object
+if obj.material_slots:
+    obj.material_slots[obj.active_material_index].material = mat
+else:
+    obj.data.materials.append(mat)
+
+# For viewport render, we have to update the luxcore object
+# because the newly created material is not yet assigned there
+obj.update_tag()        ''' 
+            
+            
+
 def define_material(material_name):
     
     # overwrites any existing materials of the same name
@@ -23,7 +112,7 @@ def define_material(material_name):
 
     # adds image texture nodes
     
-    root = "/home/oyvmjo/Blender-weldgroove/pbr/"
+    root = "/home/oyvind/Blender-weldgroove/pbr/"
 
     # Base Colour
     base_color = nodes.new(type="ShaderNodeTexImage")
@@ -66,13 +155,7 @@ def define_material(material_name):
     return new_material
 
 if __name__ == "__main__":
-    mat = define_material("Galvanized Steel")
-    
-    bpy.ops.object.editmode_toggle()
-    bpy.ops.mesh.select_linked(delimit={'SEAM'})
-    #bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.smart_project()
-    bpy.ops.object.editmode_toggle()
+    mat = luxcore("hmm")
     
     # makes the newly defined material the active one
     if bpy.context.active_object.data.materials:
