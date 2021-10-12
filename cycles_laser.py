@@ -5,10 +5,13 @@ from math import radians, cos, sin, atan, pi
 from scipy.stats import truncnorm
 
 class LaserSetup():
+
     
     def __init__(self, laser_type, groove_angle, min_dist=0.19, max_dist=0.29):
         if laser_type == "cycles":
             self.laser = self.create_cycles_laser()
+        elif laser_type == "luxcore":
+            self.laser = self.create_luxcore_laser()
         
         self.groove_angle = radians(groove_angle)
         self.camera = self.add_camera()
@@ -72,11 +75,40 @@ class LaserSetup():
         laser.data.energy = 100
         
         return laser
-
+    
+    def create_luxcore_laser(self):
+        """
+        Adds a luxcore laser
+        """
+        bpy.ops.object.light_add(type='SPOT', align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+        
+        laser = bpy.context.active_object
+        
+        laser.scale[0] = 0.8
+        
+        # ensure that the spotlight doesnt use cycles settings
+        laser.data.luxcore.use_cycles_settings = False
+        
+        laser.data.luxcore.image = bpy.data.images.load("/home/oyvind/Documents/laser-blur.png")
+        # changes the "spot shape" to 25 degres, should be equivalent to a laser with the same aperture angle 
+        laser.data.spot_size = 0.436332
+        
+        # increase importance to make the laser line visible in viewport
+        laser.data.luxcore.importance = 200
+        
+        # change light unit to power
+        laser.data.luxcore.light_unit = "power"
+        
+        laser.data.luxcore.power = 10
+        laser.data.luxcore.efficacy = 7
+        
+        return laser
+        
 
     def move_laser_to_groove(self):
         """
-        Moves the laser to the groove, using the 3D cursor (assumes that the cursor was moved in brace.py)
+        Moves the laser to the groove, using the 3D cursor (assumes that the cursor was moved in brace.py),
+        then moves it away using a length sampled between self.min_dist and self.max_dist, along an angle sampled from a truncated normal distribution.
         """
         
         # transformation matrix from origin to cursor location
@@ -135,6 +167,10 @@ class LaserSetup():
         bpy.ops.object.camera_add(location=(0, 0, 0), scale=(1, 1, 1))
 
         camera = bpy.context.active_object
+        
+        # turn off clipping 
+        camera.data.luxcore.use_clipping = False
+        
         translation = random.uniform(0.06, 0.1)
         
         mid_point = 0.24
@@ -144,8 +180,8 @@ class LaserSetup():
         print(angle, 'angle')
         
         # intrinsic parameters
-        sensor_width = random.uniform(19,22)
-        focal_length = random.uniform(20,25)
+        sensor_width = random.uniform(7,9)
+        focal_length = random.uniform(10,12)
 
         # sets the sensor size of the camera
         camera.data.sensor_width = sensor_width

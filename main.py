@@ -21,40 +21,43 @@ if len(bpy.data.objects) > 0:
     #            obj.select_set(False)
     bpy.ops.object.delete(use_global=False)
     
-weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.0, brace_rotation=-19)
+# create the weld groove
+weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.003, brace_rotation=-19)
 
-#brace = groove.add_brace_element(45, 0.01)
-#leg = groove.add_leg_element()
-#groove.rotate_brace_element(brace, leg, 0.9, 0.01, 0.8, 20)
+### MATERIAL ###
 
-
-mat = material.define_material("galvanized_steel_01/GalvanizedSteel01_4K")
+# uses the factory method associated with the desired material and render engine
+mat = material.define_material.luxcore_brushed_iron()
 
 # makes the newly defined material the active one
 if weld_groove.brace.data.materials:
-    weld_groove.brace.data.materials[0] = mat
+    weld_groove.brace.data.materials[0] = mat.material
 else:
-    weld_groove.brace.data.materials.append(mat)
+    weld_groove.brace.data.materials.append(mat.material)
 if weld_groove.leg.data.materials:
-    weld_groove.leg.data.materials[0] = mat
+    weld_groove.leg.data.materials[0] = mat.material
 else:
-    weld_groove.leg.data.materials.append(mat)
+    weld_groove.leg.data.materials.append(mat.material)
 
 # apply smart uv projection
 weld_groove.apply_smart_projection(weld_groove.brace)
 weld_groove.apply_smart_projection(weld_groove.leg)
 
-# adds laser scanner + camera setup    
-scanner = laser_setup.LaserSetup("cycles", weld_groove.groove_angle + weld_groove.brace_rotation)
-angle = scanner.move_laser_to_groove()
+### LASER SCANNER SETUP ###
 
-#bpy.ops.object.select_all(action='DESELECT')
+# adds laser scanner + camera setup    
+scanner = laser_setup.LaserSetup("luxcore", weld_groove.groove_angle + weld_groove.brace_rotation)
+
+# moves the scanner towards the groove, and returns the angle it needs to be rotated to point towards the groove
+angle = scanner.move_laser_to_groove()
 
 # rotates the setup to point towards the groove
 scanner.rotate_laser('X', (pi / 2) - angle, 4)
 
 # rotates the setup a small amount around its local Y-axis to account for it not always aligning perfectly with the braces' normal vector
 scanner.rotate_laser('Y', radians(random.uniform(-4, 4)))
+
+
 
 
 bpy.ops.object.select_all(action='DESELECT')
