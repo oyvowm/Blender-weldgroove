@@ -191,7 +191,7 @@ class LaserSetup():
 
         mat = Matrix.Rotation(pi, 4, 'Z') @ Matrix.Translation((-translation, 0, 0)) @ Matrix.Rotation(-angle, 4, 'Y')
 
-        camera.matrix_world = camera.matrix_world @ mat
+        camera.matrix_world = camera.matrix_world @ mat @ Matrix.Rotation(pi/2, 4, 'Z')
         
         return camera
 

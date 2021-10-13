@@ -22,7 +22,7 @@ if len(bpy.data.objects) > 0:
     bpy.ops.object.delete(use_global=False)
     
 # create the weld groove
-weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.003, brace_rotation=-19)
+weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.00, brace_rotation=-19)
 
 ### MATERIAL ###
 

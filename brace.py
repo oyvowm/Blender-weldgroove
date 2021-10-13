@@ -8,7 +8,7 @@ from mathutils import Vector, Euler, Matrix, Quaternion
 
 class WeldGroove():
     
-    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.03, 
+    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.02, 
                  groove_width=0.3, circle_radius=0.8, brace_rotation=20):
         
         assert groove_angle + brace_rotation > 0, "The given values gives no groove opening"
@@ -53,7 +53,8 @@ class WeldGroove():
             if vertex[1] > 0 and vertex[2] <= 0 + EPSILON:
                 v.select = True
                 break
-           
+        
+        # moves the chosen vertex along the z-axis   
         to_translate = np.tan(np.radians(groove_angle)) * brace.scale[1]
         bpy.ops.transform.translate(value=(0, 0, to_translate), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', constraint_axis=(False, False, True), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         
@@ -74,7 +75,7 @@ class WeldGroove():
         """
         Adds a leg element to the scene.
         """
-        bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0.015))
+        bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, leg_thickness / 2))
         leg = bpy.context.active_object
         leg.scale[0] = groove_width
         leg.scale[1] = leg_thickness
@@ -108,15 +109,14 @@ class WeldGroove():
         # edge to rotate around
         rotation_edge = self.brace.location[2] - brace_height / 2
         
-        print(rotation_edge, 'Rotation edge')
         # circle center of the leg element
         circle_center = [0, circle_radius]
         
         
         # change the location of the 3D cursor
         bpy.context.scene.cursor.location = (0.0, 0.0, rotation_edge)
-        cursor_loc = bpy.context.scene.cursor.location
-        
+
+        cursor_loc = bpy.context.scene.cursor.location     
         # composite transformation matrix, translating the object into the coordinate frame of the cursor and rotating
         mat = (Matrix.Translation(cursor_loc) @
                Matrix.Rotation(math.radians(degrees), 4, 'X') @
