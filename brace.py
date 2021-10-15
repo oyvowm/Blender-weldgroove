@@ -15,6 +15,7 @@ class WeldGroove():
         
         self.groove_angle = groove_angle
         self.brace_rotation = brace_rotation
+        self.groove_width = groove_width
         
         self.brace = self.add_brace_element(groove_angle, groove_width, groove_dist, brace_height, element_thickness)
         self.leg = self.add_leg_element(groove_width, element_thickness)
@@ -64,7 +65,7 @@ class WeldGroove():
         bpy.ops.mesh.select_all(action='SELECT')
 
         # finally extrudes the brace object
-        bpy.ops.mesh.extrude_context_move(TRANSFORM_OT_translate={"value":(0.3, 0, 0)})
+        bpy.ops.mesh.extrude_context_move(TRANSFORM_OT_translate={"value":(groove_width, 0, 0)})
         
         bpy.ops.object.editmode_toggle()
         
@@ -83,7 +84,7 @@ class WeldGroove():
         bpy.ops.object.editmode_toggle()
 
         # extruding the leg object as to resemble a cylindrical shape
-        bpy.ops.mesh.spin(steps=60, angle=np.pi / 5, center=(0, 0, -0.8), axis=(1, 0, 0))
+        bpy.ops.mesh.spin(steps=60, angle=np.pi / 6, center=(0, 0, -0.8), axis=(1, 0, 0))
 
         bpy.ops.object.editmode_toggle()
         

@@ -7,7 +7,9 @@ groove = bpy.data.texts["brace.py"].as_module()
 material = bpy.data.texts["materials.py"].as_module()
 laser_setup = bpy.data.texts["cycles_laser.py"].as_module()
 utils = bpy.data.texts["utils.py"].as_module()
-#camera = bpy.data.texts["camera.py"].as_module()
+
+### setup scene
+#utils.luxcore_scene()
 
 
 # deletes pre-existing objects from the scene
@@ -22,7 +24,7 @@ if len(bpy.data.objects) > 0:
     bpy.ops.object.delete(use_global=False)
     
 # create the weld groove
-weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.00, brace_rotation=-19)
+weld_groove = groove.WeldGroove(groove_angle=45, groove_dist=0.00, groove_width = 0.4, brace_rotation=-19)
 
 ### MATERIAL ###
 
@@ -49,16 +51,20 @@ weld_groove.apply_smart_projection(weld_groove.leg)
 scanner = laser_setup.LaserSetup("luxcore", weld_groove.groove_angle + weld_groove.brace_rotation)
 
 # moves the scanner towards the groove, and returns the angle it needs to be rotated to point towards the groove
-angle = scanner.move_laser_to_groove()
+angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.02)
 
 # rotates the setup to point towards the groove
 scanner.rotate_laser('X', (pi / 2) - angle, 4)
 
 # rotates the setup a small amount around its local Y-axis to account for it not always aligning perfectly with the braces' normal vector
-scanner.rotate_laser('Y', radians(random.uniform(-4, 4)))
+#scanner.rotate_laser('Y', radians(random.uniform(-4, 4)))
 
+# move laser + keyframe insertion
+scanner.laser.keyframe_insert(data_path="location", frame=1)
 
+scanner.move_laser(weld_groove.groove_width - 0.04)
 
+scanner.laser.keyframe_insert(data_path="location", frame=100)
 
 bpy.ops.object.select_all(action='DESELECT')
 

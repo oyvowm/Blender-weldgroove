@@ -25,3 +25,27 @@ def apply_smart_project(object):
 def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
     return truncnorm(
         (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+
+def luxcore_scene():
+    bpy.context.scene.luxcore.config.path.depth_total = 6
+    bpy.context.scene.luxcore.config.path.hybridbackforward_enable = True
+    
+    bpy.context.scene.luxcore.denoiser.enabled = True
+    bpy.context.scene.luxcore.denoiser.type = 'OIDN'
+    
+    bpy.context.scene.luxcore.halt.enable = True
+    bpy.context.scene.luxcore.halt.use_time = True
+    bpy.context.scene.luxcore.halt.time = 30
+
+    bpy.context.scene.render.resolution_x = 2448
+    bpy.context.scene.render.resolution_y = 2048
+    bpy.context.scene.render.resolution_percentage = 80
+    
+    bpy.context.scene.frame_start = 1
+    bpy.context.scene.frame_end = 100
+    bpy.context.scene.frame_step = 1
+
+    bpy.context.scene.world.luxcore.use_cycles_settings = False
+    bpy.ops.image.open(filepath="//Downloads/industrial_pipe_and_valve_02_4k.exr", directory="/home/oyvind/Downloads/", files=[{"name":"industrial_pipe_and_valve_02_4k.exr", "name":"industrial_pipe_and_valve_02_4k.exr"}], relative_path=True, show_multiview=False)
+
+    

@@ -105,7 +105,7 @@ class LaserSetup():
         return laser
         
 
-    def move_laser_to_groove(self):
+    def move_laser_to_groove(self, x_initial):
         """
         Moves the laser to the groove, using the 3D cursor (assumes that the cursor was moved in brace.py),
         then moves it away using a length sampled between self.min_dist and self.max_dist, along an angle sampled from a truncated normal distribution.
@@ -115,7 +115,7 @@ class LaserSetup():
         to_cursor = Matrix.Translation(bpy.context.scene.cursor.location)
         
         # where to place the laser along the width of the groove
-        x_location = 0
+        x_translation = Matrix.Translation((x_initial, 0, 0))
         
         # limits how acute the angle between the laser and groove faces can be
         acute = self.groove_angle * 0.1
@@ -139,7 +139,7 @@ class LaserSetup():
         from_groove = Matrix.Translation((0, length * direction_vector[0], length * direction_vector[1]))
         
         # transformation from cursor location to an arbitrary point outside the weld groove
-        self.laser.matrix_world = to_cursor @ from_groove @ self.laser.matrix_world
+        self.laser.matrix_world = x_translation @ to_cursor @ from_groove @ self.laser.matrix_world
         
         # ensure that the laser scanner is moved within the acceptable range
         dist_vec = [self.laser.location[1] - bpy.context.scene.cursor.location[1], self.laser.location[2] - bpy.context.scene.cursor.location[2]]
@@ -158,6 +158,13 @@ class LaserSetup():
         rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise))), 4, axis)
         self.laser.matrix_world = self.laser.matrix_world @ rot
         
+        
+    def move_laser(self, distance):
+        """
+        Moves the laser along the x-axis of the world coordinate frame.
+        """
+        self.laser.matrix_world = Matrix.Translation((-distance, 0, 0)) @ self.laser.matrix_world   
+
 
     def add_camera(self):
         """
