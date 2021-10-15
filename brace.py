@@ -11,7 +11,7 @@ class WeldGroove():
     def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.02, 
                  groove_width=0.3, circle_radius=0.8, brace_rotation=20):
         
-        assert groove_angle + brace_rotation > 0, "The given values gives no groove opening"
+        #assert groove_angle + brace_rotation > 0, "The given values gives no groove opening"
         
         self.groove_angle = groove_angle
         self.brace_rotation = brace_rotation
