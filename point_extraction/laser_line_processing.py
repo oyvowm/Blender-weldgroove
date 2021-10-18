@@ -1,12 +1,9 @@
 import cv2 as cv
 import numpy as np
+import matplotlib.pyplot as plt
 
-img = cv.imread("hei.png")
-img2 = cv.imread("test2.png", 0)
+img = cv.imread("render/Image_Denoised0001.png")
 
-
-
-rows, cols = img2.shape
 # convert to HSV
 hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
@@ -19,7 +16,7 @@ red_line = cv.inRange(hsv_img, lowerb, upperb)
 imgny = cv.bitwise_and(img,img, mask = red_line)
 
 
-kernel_closing = np.ones((10,10), np.uint8)
+kernel_closing = np.ones((5,5), np.uint8)
 kernel_opening = np.ones((1,1), np.uint8)
 #imgny = cv.erode(imgny, kernel, iterations=1)
 imgny = cv.morphologyEx(imgny, cv.MORPH_CLOSE, kernel_closing)
