@@ -39,7 +39,7 @@ def add_handler(func):
 
 
 
-def luxcore_scene():
+def luxcore_main_scene():
     
     main_scene = bpy.data.scenes[0]
     main_scene.world = bpy.data.worlds['World']
@@ -57,25 +57,33 @@ def luxcore_scene():
     
     main_scene.luxcore.halt.enable = True
     main_scene.luxcore.halt.use_time = True
-    main_scene.luxcore.halt.time = 5
+    main_scene.luxcore.halt.time = 25
 
     main_scene.render.resolution_x = 2448
     main_scene.render.resolution_y = 2048
     main_scene.render.resolution_percentage = 80
     
-    main_scene.view_layers['View Layer']['luxcore']['aovs']['position'] = True
+    main_scene.view_layers['View Layer'].luxcore.aovs.position = True
 
     main_scene.world.luxcore.use_cycles_settings = False
     
     # environment
+    
     main_scene.world.luxcore.image = bpy.data.images.load("/home/oyvind/Downloads/industrial_pipe_and_valve_02_4k.exr")
+    main_scene.world.luxcore.light = 'infinite'
+    
+
+def luxcore_new_scene():
     
     if len(bpy.data.scenes) < 2:
-        bpy.ops.scene.new(type='FULL_COPY')
-        
-    new_scene = bpy.data.scenes[-1]
+        new_scene = bpy.data.scenes[0].copy()
+    else:
+        new_scene = bpy.data.scenes[1]
+    
     
     bpy.context.window.scene = new_scene
+    
+    new_scene.use_nodes = False
     
     new_scene.luxcore.config.device = 'OCL'
     
@@ -88,10 +96,15 @@ def luxcore_scene():
     new_scene.luxcore.config.path.hybridbackforward_enable = False
     new_scene.luxcore.halt.time = 2
     
-    new_scene.view_layers['View Layer']['luxcore']['aovs']['direct_diffuse'] = True
-    new_scene.view_layers['View Layer']['luxcore']['aovs']['position'] = False
+    new_scene.view_layers['View Layer'].luxcore.aovs.direct_diffuse = True
+    new_scene.view_layers['View Layer'].luxcore.aovs.position = False
     
-    new_scene.world.luxcore.image_user['image'] = None
+    if 'diffuse' in bpy.data.materials.keys():
+        new_scene.view_layers['View Layer'].material_override = bpy.data.materials['diffuse']
+    else:
+        raise Exception('No diffuse material defined.')
+        
+   # new_scene.world.luxcore.image_user['image'] = None
     
     if len(bpy.data.worlds) > 1:
         for world in bpy.data.worlds:
@@ -100,17 +113,15 @@ def luxcore_scene():
                 bpy.data.worlds.remove(world)
     bpy.data.worlds.new('NoHDRI')
     new_scene.world = bpy.data.worlds[0]
+    new_scene.world.luxcore.light = 'none'
     
     bpy.context.window.scene = bpy.data.scenes[0]
     
-    
 
-    # compositor
-    compositor()
     
     
 def compositor():
-    scene = bpy.context.scene
+    scene = bpy.data.scenes[0]
     scene.use_nodes = True
     nodes = scene.node_tree.nodes
     links = scene.node_tree.links
@@ -150,4 +161,6 @@ def compositor():
     links.new(render_layer_images.outputs[3], position.inputs[0])
     
 if __name__ == "__main__":
-    luxcore_scene()
+    luxcore_main_scene()
+    luxcore_new_scene()
+    compositor()

@@ -139,9 +139,37 @@ class define_material():
         texture_coordinate.location = [mapper.location[0] - 200, mapper.location[1]]
         links.new(texture_coordinate.outputs[2], mapper.inputs[0])
         
-        
-        
         return new_material
+
+def diffuse_material():
+    """
+    Creates a 'matte' material to be used for extracting the non-distorted laser line for the mask.
+    """
+    
+    if "diffuse" in bpy.data.materials:
+        diffuse = bpy.data.materials["diffuse"]
+    else:
+        diffuse = bpy.data.materials.new(name="diffuse")
+        
+    tree_name = "Nodes_" + diffuse.name
+    node_tree = bpy.data.node_groups.new(name=tree_name, type="luxcore_material_nodes")
+    diffuse.luxcore.node_tree = node_tree
+
+    # User counting does not work reliably with Python PointerProperty.
+    # Sometimes, the material this tree is linked to is not counted as user.
+    node_tree.use_fake_user = True    
+    nodes = node_tree.nodes
+    links = node_tree.links
+    
+    
+    output = nodes.new("LuxCoreNodeMatOutput")
+    
+    matte = nodes.new("LuxCoreNodeMatMatte")
+    matte.location = (-300, 0)
+        
+    links.new(matte.outputs[0], output.inputs[0])
+    
+    
 
 if __name__ == "__main__":
     mat = luxcore_material("hmm")

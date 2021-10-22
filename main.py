@@ -10,8 +10,11 @@ material = bpy.data.texts["materials.py"].as_module()
 laser_setup = bpy.data.texts["cycles_laser.py"].as_module()
 utils = bpy.data.texts["utils.py"].as_module()
 
-### setup scene
-utils.luxcore_scene()
+# updates scene parameters
+utils.luxcore_main_scene()
+
+# adds diffuse material
+material.diffuse_material()
 
 # set keyframes to animate
 bpy.context.scene.frame_start = 1
@@ -22,37 +25,34 @@ if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
 else:
     iteration = 1
 
-stop = 2
+stop = 20
 
 if stop - iteration  > 0:
-    for i in range(iteration, stop):
+    for i in range(iteration, stop+1):
         
         os.chdir("/home/oyvind/Desktop/blender-2.92.0-linux64/")
         print(os.getcwd())
 
         # deletes pre-existing objects from the scene
-        if len(bpy.data.objects) > 0:
-            bpy.ops.object.mode_set(mode="OBJECT")
-            bpy.ops.object.select_all(action="SELECT")
-            # stops the script from deleting the light and camera objects
-            
-            #for obj in bpy.context.selected_objects:
-            #        if obj.name == "Light" or obj.name == "Camera":
-            #            obj.select_set(False)
-            bpy.ops.object.delete(use_global=False)
+        for obj in bpy.data.objects:
+            if obj.name[:4] != "Weld" and obj.name[-3:] != "003" and obj.name[-3:] != "002":
+                bpy.data.objects.remove(obj)
         
         # create the weld groove
         groove_angle = np.random.randint(30,46)
-        groove_dist = np.random.choice([0.00, 0.003, 0.01])
+        #groove_dist = np.random.choice([0.00, 0.003, 0.01])
         brace_rotation = np.random.randint(-20, 40)
+        
+        # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
+        groove_dist = 0.003
         
         while groove_angle + brace_rotation < 20:
             print("Current values gives no groove opening, sampling new values...")
-            groove_angle = np.random.randint(30,46)
+            groove_angle = np.random.randint(30, 46)
             brace_rotation = np.random.randint(-20, 40)
         
         
-        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, groove_width = 0.4, brace_rotation=brace_rotation)
+        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, groove_width=0.4, brace_rotation=brace_rotation)
 
         ### MATERIAL ###
 
@@ -106,9 +106,16 @@ if stop - iteration  > 0:
         print(os.getcwd())
         utils.add_handler(utils.save_laser_matrix)
 
+        # for some reason the scene does not seem to have a camera attached when using denoising, causing the comopositing nodes to fail.
+        # therefore, the camera is manually added to the scene objects camera attribute.
         for scene in bpy.data.scenes:
-            scene.camera = scanner.camera
-        #bpy.context.scene.camera = scanner.camera
+            scene.camera = bpy.data.objects["Camera"]
+            
+        ### setup scene
+        if len(bpy.data.scenes) < 2:
+            utils.luxcore_new_scene()
+            utils.compositor()
+        
         bpy.ops.render.render(animation=True)
 
         # as the exr files get saved to the wrong folder:
@@ -126,6 +133,7 @@ if stop - iteration  > 0:
         
 
         bpy.ops.object.select_all(action='DESELECT')
+        
 
         # save the current step
         np.save("/home/oyvind/Blender-weldgroove/render/i", i)
@@ -133,28 +141,27 @@ if stop - iteration  > 0:
 
 
 else:
-    
-    # deletes pre-existing objects from the scene
-    if len(bpy.data.objects) > 0:
-        bpy.ops.object.mode_set(mode="OBJECT")
-        bpy.ops.object.select_all(action="SELECT")
-        # stops the script from deleting the light and camera objects
         
-        #for obj in bpy.context.selected_objects:
-        #        if obj.name == "Light" or obj.name == "Camera":
-        #            obj.select_set(False)
-        bpy.ops.object.delete(use_global=False)
+    # deletes pre-existing objects from the scene
+    for obj in bpy.data.objects:
+        if obj.name[:4] != "Weld" and obj.name[-3:] != "003" and obj.name[-3:] != "002":
+            bpy.data.objects.remove(obj)
+
+    
     
     # create the weld groove
     groove_angle = np.random.randint(30,46)
-    groove_dist = np.random.choice([0.00, 0.003, 0.01])
-    brace_rotation = np.random.randint(-20, 45)
+    #groove_dist = np.random.choice([0.00, 0.003, 0.01])
+    brace_rotation = np.random.randint(-20, 40)
+    
+    # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
+    groove_dist = 0.003
     
     while groove_angle + brace_rotation < 20:
         print("Current values gives too small groove opening, sampling new values...")
         groove_angle = np.random.randint(30,46)
         brace_rotation = np.random.randint(-20, 45)
-    
+        
     
     weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, groove_width = 0.4, brace_rotation=brace_rotation)
 
@@ -187,3 +194,16 @@ else:
 
     # rotates the setup to point towards the groove
     scanner.rotate_laser('X', (pi / 2) - angle, 4)
+    
+    ### setup scene
+
+    # for some reason the scene does not seem to have a camera attached when using denoising, causing the comopositing nodes to fail.
+    # therefore, the camera is manually added to the scene objects camera attribute.
+    for scene in bpy.data.scenes:
+        scene.camera = bpy.data.objects["Camera"]
+    
+    
+    #if len(bpy.data.scenes) < 2:
+    utils.luxcore_new_scene()
+    utils.compositor()
+    

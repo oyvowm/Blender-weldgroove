@@ -1,8 +1,0 @@
-
-import bpy
-    
-def hello_world(dummy):
-    print(bpy.data.objects['Spot'].matrix_world)
-    print("hello world")
-
-bpy.app.handlers.render_post.append(hello_world)
