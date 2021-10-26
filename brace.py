@@ -7,8 +7,8 @@ from mathutils import Vector, Euler, Matrix, Quaternion
 
 
 class WeldGroove():
-    
-    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.02, 
+    # lagd ca 460 bilder med tykkelse 0.02
+    def __init__(self, groove_angle, groove_dist=0.01, brace_height=0.4, element_thickness=0.025, 
                  groove_width=0.3, circle_radius=0.8, brace_rotation=20):
         
         #assert groove_angle + brace_rotation > 0, "The given values gives no groove opening"

@@ -29,9 +29,10 @@ def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
         
 def save_laser_matrix(dummy):
     i = 1
-    while os.path.exists("/home/oyvind/ip/render/" + str(i) + '.npy'):
-        i += 1    
-    np.save("/home/oyvind/ip/render/" + str(i), bpy.data.objects['Spot'].matrix_world)
+
+    while os.path.exists("/home/oyvind/Blender-weldgroove/render/" + str(i) + '.npy'):
+        i += 1
+    np.save("/home/oyvind/Blender-weldgroove/render/" + str(i), bpy.data.objects['Spot'].matrix_world)
 
 def add_handler(func):
     bpy.app.handlers.render_post.clear()
@@ -39,7 +40,7 @@ def add_handler(func):
 
 
 
-def luxcore_main_scene():
+def luxcore_main_scene(halt_time):
     
     main_scene = bpy.data.scenes[0]
     main_scene.world = bpy.data.worlds['World']
@@ -49,7 +50,7 @@ def luxcore_main_scene():
     main_scene.luxcore.config.device = 'OCL'
     
     
-    main_scene.luxcore.config.path.depth_total = 6
+    main_scene.luxcore.config.path.depth_total = 10
     bpy.context.scene.luxcore.config.path.hybridbackforward_enable = True
     
     main_scene.luxcore.denoiser.enabled = True
@@ -57,7 +58,7 @@ def luxcore_main_scene():
     
     main_scene.luxcore.halt.enable = True
     main_scene.luxcore.halt.use_time = True
-    main_scene.luxcore.halt.time = 25
+    main_scene.luxcore.halt.time = halt_time
 
     main_scene.render.resolution_x = 2448
     main_scene.render.resolution_y = 2048
@@ -141,6 +142,7 @@ def compositor():
     mask = nodes.new("CompositorNodeOutputFile")
     mask.location = (300,700)
     mask.file_slots.new("mask")
+    mask.format.color_mode = 'BW'
     
     position = nodes.new("CompositorNodeOutputFile")
     position.location = (300,-100)

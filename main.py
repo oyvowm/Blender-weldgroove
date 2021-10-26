@@ -11,24 +11,28 @@ laser_setup = bpy.data.texts["cycles_laser.py"].as_module()
 utils = bpy.data.texts["utils.py"].as_module()
 
 # updates scene parameters
-utils.luxcore_main_scene()
+utils.luxcore_main_scene(25)
 
 # adds diffuse material
 material.diffuse_material()
 
 # set keyframes to animate
 bpy.context.scene.frame_start = 1
-bpy.context.scene.frame_end = 3 # 36
+bpy.context.scene.frame_end = 20 # 36
 
 if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
     iteration = int(np.load("/home/oyvind/Blender-weldgroove/render/i.npy"))
 else:
     iteration = 1
+print(iteration)
+stop = 40
 
-stop = 20
+# sample angle between laser and weld groove normal
+norm_angle = np.radians(np.random.uniform(-4, 4))
 
-if stop - iteration  > 0:
-    for i in range(iteration, stop+1):
+### BYTT SÅNN AT ITERATION + 1 ####
+if stop - iteration > 0:
+    for i in range(iteration + 1, stop + 1):
         
         os.chdir("/home/oyvind/Desktop/blender-2.92.0-linux64/")
         print(os.getcwd())
@@ -83,6 +87,9 @@ if stop - iteration  > 0:
 
         # rotates the setup to point towards the groove
         scanner.rotate_laser('X', (pi / 2) - angle, 4)
+        
+        # rotates setup no not be perfectly aligned with weld groove normal
+        scanner.rotate_laser('Y', norm_angle, 0)
 
         # move laser + keyframe insertion
         scanner.laser.keyframe_insert(data_path="location", frame=bpy.context.scene.frame_start)
@@ -126,10 +133,11 @@ if stop - iteration  > 0:
             if os.path.exists(path + file + '.exr'):
                 os.rename(path + file + '.exr', path + '/' + file + '.exr')
 
-        for i in range(1, bpy.context.scene.frame_end + 1 ):
-            i = str(i)
-            if os.path.exists("/home/oyvind/Blender-weldgroove/render/" + i + '.npy'):
-                os.rename("/home/oyvind/Blender-weldgroove/render/" + i + '.npy', path + '/' + i + '.npy')
+        for n in range(1, bpy.context.scene.frame_end + 1 ):
+            n = str(n)
+            if os.path.exists("/home/oyvind/Blender-weldgroove/render/" + n + '.npy'):
+                k = (4 - len(n)) * '0' + n
+                os.rename("/home/oyvind/Blender-weldgroove/render/" + n + '.npy', path + '/' + k + '.npy')
         
 
         bpy.ops.object.select_all(action='DESELECT')
@@ -194,6 +202,9 @@ else:
 
     # rotates the setup to point towards the groove
     scanner.rotate_laser('X', (pi / 2) - angle, 4)
+    
+    # rotates setup no not be perfectly aligned with weld groove normal
+    scanner.rotate_laser('Y', norm_angle, 0)
     
     ### setup scene
 
