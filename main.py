@@ -25,7 +25,7 @@ if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
 else:
     iteration = 1
 print(iteration)
-stop = 40
+stop = 50
 
 # sample angle between laser and weld groove normal
 norm_angle = np.radians(np.random.uniform(-4, 4))
@@ -61,7 +61,7 @@ if stop - iteration > 0:
         ### MATERIAL ###
 
         # uses the factory method associated with the desired material and render engine
-        mat = material.define_material.luxcore_brushed_iron()
+        mat = material.DefineMaterial.luxcore_brushed_iron2()
 
         # makes the newly defined material the active one
         if weld_groove.brace.data.materials:
@@ -176,7 +176,7 @@ else:
     ### MATERIAL ###
 
     # uses the factory method associated with the desired material and render engine
-    mat = material.define_material.luxcore_brushed_iron()
+    mat = material.DefineMaterial.luxcore_brushed_iron2()
 
     # makes the newly defined material the active one
     if weld_groove.brace.data.materials:

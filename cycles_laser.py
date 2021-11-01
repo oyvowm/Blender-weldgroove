@@ -7,7 +7,7 @@ from scipy.stats import truncnorm
 class LaserSetup():
 
     
-    def __init__(self, laser_type, groove_angle, min_dist=0.19, max_dist=0.29):
+    def __init__(self, laser_type, groove_angle, min_dist=0.15, max_dist=0.29): # min_dist = 0.19 for 45 first renders
         if laser_type == "cycles":
             self.laser = self.create_cycles_laser()
         elif laser_type == "luxcore":

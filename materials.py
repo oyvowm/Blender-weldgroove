@@ -2,7 +2,7 @@ import bpy
 import os
 # Add in a variable for the file paths later
 
-class define_material():
+class DefineMaterial():
     def __init__(self, material_name, func):
         #self.material_name = material_name
         root = "/home/oyvind/Blender-weldgroove/pbr/" 
@@ -19,6 +19,10 @@ class define_material():
     @classmethod
     def luxcore_brushed_iron(cls):
         return cls("brushed_iron_01/BrushedIron01_4K", cls.luxcore_material)
+    
+    @classmethod
+    def luxcore_brushed_iron2(cls):
+        return cls("brushed_iron_02/BrushedIron02_4K", cls.luxcore_material)
     
     @classmethod
     def cycles_brushed_iron(cls):
