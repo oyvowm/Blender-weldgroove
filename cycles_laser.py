@@ -7,7 +7,7 @@ from scipy.stats import truncnorm
 class LaserSetup():
 
     
-    def __init__(self, laser_type, groove_angle, min_dist=0.15, max_dist=0.29): # min_dist = 0.19 for 45 first renders
+    def __init__(self, laser_type, groove_angle, min_dist=0.21, max_dist=0.32): # min_dist = 0.19 for 45 first renders
         if laser_type == "cycles":
             self.laser = self.create_cycles_laser()
         elif laser_type == "luxcore":
@@ -30,7 +30,7 @@ class LaserSetup():
         laser = bpy.context.active_object
         
         # changes the "spot shape" to 25 degres, should be equivalent to a laser with the same aperture angle 
-        laser.data.spot_size = 0.436332
+        laser.data.spot_size = 0.48 # 0.436332 = 25 degrees
         
         laser.data.use_nodes = True
         nodes = laser.data.node_tree.nodes

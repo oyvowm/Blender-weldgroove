@@ -11,7 +11,7 @@ laser_setup = bpy.data.texts["cycles_laser.py"].as_module()
 utils = bpy.data.texts["utils.py"].as_module()
 
 # updates scene parameters
-utils.luxcore_main_scene(25)
+utils.luxcore_main_scene(16, 'asdf')
 
 # adds diffuse material
 material.diffuse_material()
@@ -20,12 +20,14 @@ material.diffuse_material()
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = 20 # 36
 
+bpy.context.preferences.edit.keyframe_new_interpolation_type = 'LINEAR'
+
 if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
     iteration = int(np.load("/home/oyvind/Blender-weldgroove/render/i.npy"))
 else:
     iteration = 1
 print(iteration)
-stop = 50
+stop = 90
 
 # sample angle between laser and weld groove normal
 norm_angle = np.radians(np.random.uniform(-4, 4))
@@ -45,21 +47,21 @@ if stop - iteration > 0:
         # create the weld groove
         groove_angle = np.random.randint(30,46)
         #groove_dist = np.random.choice([0.00, 0.003, 0.01])
-        brace_rotation = np.random.randint(-20, 40)
+        brace_rotation = np.random.randint(-20, 55) # (-20, 40) first 80 renders
         
         # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-        groove_dist = 0.003
+        groove_dist = 0.005 # 0.003 for first 69 renders
         
         while groove_angle + brace_rotation < 20:
             print("Current values gives no groove opening, sampling new values...")
             groove_angle = np.random.randint(30, 46)
-            brace_rotation = np.random.randint(-20, 40)
+            brace_rotation = np.random.randint(-20, 55)
         
         
-        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, groove_width=0.4, brace_rotation=brace_rotation)
+        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness = 0.03, groove_width=0.4, brace_rotation=brace_rotation)
 
         ### MATERIAL ###
-
+        
         # uses the factory method associated with the desired material and render engine
         mat = material.DefineMaterial.luxcore_brushed_iron2()
 
@@ -83,21 +85,27 @@ if stop - iteration > 0:
         scanner = laser_setup.LaserSetup("luxcore", weld_groove.groove_angle + weld_groove.brace_rotation)
 
         # moves the scanner towards the groove, and returns the angle it needs to be rotated to point towards the groove
-        angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.02)
+        angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.03)
 
         # rotates the setup to point towards the groove
-        scanner.rotate_laser('X', (pi / 2) - angle, 4)
+        scanner.rotate_laser('X', (pi / 2) - angle, 7)
         
         # rotates setup no not be perfectly aligned with weld groove normal
         scanner.rotate_laser('Y', norm_angle, 0)
 
         # move laser + keyframe insertion
+        
         scanner.laser.keyframe_insert(data_path="location", frame=bpy.context.scene.frame_start)
 
-        scanner.move_laser(weld_groove.groove_width - 0.04)
+        scanner.move_laser(weld_groove.groove_width - 0.06)
 
         scanner.laser.keyframe_insert(data_path="location", frame=bpy.context.scene.frame_end)
-
+        
+            
+        ### setup diffuse scene
+        #utils.luxcore_new_scene()
+        #utils.compositor()
+        
         # creates directory and saves files to the new directory
         dirname = str(i)
         path = "/home/oyvind/Blender-weldgroove/render/" + dirname
@@ -117,11 +125,7 @@ if stop - iteration > 0:
         # therefore, the camera is manually added to the scene objects camera attribute.
         for scene in bpy.data.scenes:
             scene.camera = bpy.data.objects["Camera"]
-            
-        ### setup scene
-        if len(bpy.data.scenes) < 2:
-            utils.luxcore_new_scene()
-            utils.compositor()
+        
         
         bpy.ops.render.render(animation=True)
 
@@ -160,10 +164,10 @@ else:
     # create the weld groove
     groove_angle = np.random.randint(30,46)
     #groove_dist = np.random.choice([0.00, 0.003, 0.01])
-    brace_rotation = np.random.randint(-20, 40)
+    brace_rotation = np.random.randint(-20, 55)
     
     # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-    groove_dist = 0.003
+    groove_dist = 0.005
     
     while groove_angle + brace_rotation < 20:
         print("Current values gives too small groove opening, sampling new values...")
@@ -171,7 +175,7 @@ else:
         brace_rotation = np.random.randint(-20, 45)
         
     
-    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, groove_width = 0.4, brace_rotation=brace_rotation)
+    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness=0.03, groove_width = 0.4, brace_rotation=brace_rotation)
 
     ### MATERIAL ###
 
@@ -198,7 +202,7 @@ else:
     scanner = laser_setup.LaserSetup("luxcore", weld_groove.groove_angle + weld_groove.brace_rotation)
 
     # moves the scanner towards the groove, and returns the angle it needs to be rotated to point towards the groove
-    angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.02)
+    angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.03)
 
     # rotates the setup to point towards the groove
     scanner.rotate_laser('X', (pi / 2) - angle, 4)
@@ -214,7 +218,7 @@ else:
         scene.camera = bpy.data.objects["Camera"]
     
     
-    #if len(bpy.data.scenes) < 2:
-    utils.luxcore_new_scene()
-    utils.compositor()
+    ##if len(bpy.data.scenes) < 2:
+    #utils.luxcore_new_scene()
+    #utils.compositor()
     
