@@ -108,7 +108,7 @@ if __name__ == "__main__":
     renders = [render for render in renders if (render[-3:] != "npy" and render[-3:] != "exr")]
     renders = [int(i) for i in renders]
     renders.sort()
-    #renders.pop()
+    renders.pop()
     #renders = renders[52:] # to only process a certain subset
     renders = [str(i) for i in renders]  
     print(renders)
@@ -152,6 +152,7 @@ if __name__ == "__main__":
             # therefore, for the first 50 renders, the x-value of the laser scanner is replaced by the average x-value of the ground truth points.
             if int(render) < 51:
                 translation[0] = np.average(ground_truth[0])
+                
             # for render >= 57 the tmatrix should contain the actual x-value.
 
             inverse_rotation = rotation_matrix.transpose()

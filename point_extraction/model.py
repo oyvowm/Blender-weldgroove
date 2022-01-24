@@ -48,6 +48,8 @@ class SimpleNetwork(nn.Module):
         x = x.reshape(x.shape[0], -1, 2)
         return x
 
+
+
 class SimpleNetwork2(nn.Module):
     """
     added more layers
@@ -120,6 +122,57 @@ class SimpleNetwork2(nn.Module):
         x = x.reshape(x.shape[0], 2, -1)
         return x
 
+class SimpleNetwork3(nn.Module):
+    """
+    identical to SimpleNetwork but with larger filters in the convolutional layers
+    """
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv1d(2,8,5,2,2) # 320  ut
+        self.bn1 = nn.BatchNorm1d(8)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv1d(8,64,5,2,2) # 160 ut
+        self.bn2 = nn.BatchNorm1d(64)
+        self.conv3 = nn.Conv1d(64, 128, 5, 2, 2) # 80 ut
+        self.bn3 = nn.BatchNorm1d(128)
+        self.conv4 = nn.Conv1d(128, 256, 5, 2, 2) # 40 ut
+        self.bn4 = nn.BatchNorm1d(256)
+
+        self.fc1 = nn.Linear(256*40, 640)
+        self.fc2 = nn.Linear(640, 128)
+        self.fc3 = nn.Linear(128, 10)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+            elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(self.bn1(x))
+
+        x = self.conv2(x)
+        x = F.relu(self.bn2(x))
+
+        x = self.conv3(x)
+        x = F.relu(self.bn3(x))
+
+        x = self.conv4(x)
+        x = F.relu(self.bn4(x))
+
+        x = x.flatten(1)
+        x = self.fc1(x)
+        x = F.relu(x)
+
+        x = self.fc2(x)
+        x = F.relu(x)
+
+        x = self.fc3(x)
+        x = x.reshape(x.shape[0], 2, -1)
+        return x
+
 class FeedForwardNet(nn.Module):
     def __init__(self):
         super().__init__()
@@ -163,6 +216,7 @@ class ResidualBlock(nn.Module):
                 conv1d1x1(inchans, outchans, stride=stride),
                 nn.BatchNorm1d(outchans)
             )
+            self.conv1 = conv1d2x2(inchans, outchans, kernel=7, stride=2, padding=3)
 
     def forward(self, x):
         #print(x.shape)
@@ -186,16 +240,16 @@ class ResidualBlock(nn.Module):
 class ResidualNetwork(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.conv1 = nn.Conv1d(2, 16, 7, 2, 3) # 320  ut
+        self.conv1 = nn.Conv1d(2, 16, 9, 2, 4) # 320  ut
         self.bn1 = nn.BatchNorm1d(16)
         self.relu = nn.ReLU(inplace=True)
         #self.avgpool = nn.AvgPool1d(2)
         self.pool = nn.MaxPool1d(2)
 
-        self.layer1 = self.make_layer(16, 64, 2, 5, 2)
-        self.layer2 = self.make_layer(64, 128, 3, 5, 2)
-        self.layer3 = self.make_layer(128, 256, 3, 5, 2)
-        self.layer4 = self.make_layer(256, 512, 4, 5, 2)
+        self.layer1 = self.make_layer(16, 64, 6, 3, 1)
+        self.layer2 = self.make_layer(64, 128, 7, 3, 1)
+        self.layer3 = self.make_layer(128, 256, 7, 3, 1)
+        self.layer4 = self.make_layer(256, 512, 5, 3, 1)
 
         self.fc1 = nn.Linear(512 * 20, 100)
         self.fc2 = nn.Linear(100, 10)
@@ -215,7 +269,7 @@ class ResidualNetwork(nn.Module):
     def make_layer(self, inchans, outchans, num_blocks, kernel, padding):
         layers = []
 
-        layers.append(ResidualBlock(inchans, outchans, 5, 2, 2))
+        layers.append(ResidualBlock(inchans, outchans, 7, 3, 2))
 
         for _ in range(1, num_blocks):
             layers.append(ResidualBlock(outchans, outchans, kernel, padding))
@@ -241,8 +295,7 @@ class ResidualNetwork(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-
-        x = x.reshape(x.shape[0], 2, -1)
+        x = x.reshape(x.shape[0], -1, 2)
         return x
 
 
@@ -256,4 +309,5 @@ if __name__ == '__main__':
 
     print('num parameters:',pytorch_total_params)
     #print(model)
-    model(x)
+    a = model(x)
+    print(a.shape)

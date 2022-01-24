@@ -27,7 +27,7 @@ if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
 else:
     iteration = 1
 print(iteration)
-stop = 90
+stop = 108
 
 # sample angle between laser and weld groove normal
 norm_angle = np.radians(np.random.uniform(-4, 4))
@@ -45,12 +45,12 @@ if stop - iteration > 0:
                 bpy.data.objects.remove(obj)
         
         # create the weld groove
-        groove_angle = np.random.randint(30,46)
+        groove_angle = np.random.randint(25,50) # 30, 46 first 106
         #groove_dist = np.random.choice([0.00, 0.003, 0.01])
         brace_rotation = np.random.randint(-20, 55) # (-20, 40) first 80 renders
         
         # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-        groove_dist = 0.005 # 0.003 for first 69 renders
+        groove_dist = 0.004 # 0.003 for first 69 renders, 0.005 - 106
         
         while groove_angle + brace_rotation < 20:
             print("Current values gives no groove opening, sampling new values...")
@@ -88,7 +88,7 @@ if stop - iteration > 0:
         angle = scanner.move_laser_to_groove(x_initial = weld_groove.groove_width/2 - 0.03)
 
         # rotates the setup to point towards the groove
-        scanner.rotate_laser('X', (pi / 2) - angle, 7)
+        scanner.rotate_laser('X', (pi / 2) - angle, 4)
         
         # rotates setup no not be perfectly aligned with weld groove normal
         scanner.rotate_laser('Y', norm_angle, 0)

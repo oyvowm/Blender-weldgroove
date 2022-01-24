@@ -48,8 +48,8 @@ def cloud_normalization(arr):
 
 def move_points(arr, labels):
     # moves the entire point cloud by random amounts along the x- and y-axis
-    to_move_x = np.random.uniform(-0.004, 0.004)
-    to_move_y = np.random.uniform(-0.02, 0.02)
+    to_move_x = np.random.uniform(-0.0004, 0.0004)
+    to_move_y = np.random.uniform(-0.002, 0.002)
 
     arr[-2] = arr[-2] + to_move_x
     arr[-1] = arr[-1] + to_move_y
@@ -66,6 +66,31 @@ def rotate_points(arr, labels):
     labels = rot_x @ labels
     return rot_x @ arr, labels[1:]
 
+def affine_transformation(arr, labels):
+    angle = np.random.uniform(-7, 7)
+    #angle = 0
+    rot_x = rot_matrix('x', angle)
+    rot_x = rot_x[1:,1:]
+    mean = np.mean(arr, axis=1)
+
+    streching = np.array([[np.random.uniform(0.85, 1.15), 0], [0, np.random.uniform(0.9, 1.3)]])
+
+    arr[0] = arr[0] - mean[0]
+    arr[1] = arr[1] - mean[1]
+    arr = rot_x @ streching @ arr
+    arr[0] = arr[0] + mean[0]
+    arr[1] = arr[1] + mean[1]
+
+    labels[0] = labels[0] - mean[0]
+    labels[1] = labels[1] - mean[1]
+    labels = rot_x @ streching @ labels
+    labels[0] = labels[0] + mean[0]
+    labels[1] = labels[1] + mean[1]
+
+    #labels = np.vstack((np.ones((1, labels.shape[1])) ,labels))
+    #labels = 
+    return arr, labels
+
  
 def change_x_range(arr, labels):
     x_scale = np.random.uniform(0.8, 1.2)
@@ -80,15 +105,15 @@ def change_x_range(arr, labels):
 def add_noise(arr, noise_segment_length, max_y_index):
     start = np.random.randint(0, 640)
     #print(arr[-1][max_y_index])
-    if start < max_y_index - 50 or start > max_y_index + 50:
-        noise_segment_length *= np.random.randint(2,5) # (3,8) før
+    if start < max_y_index - 90 or start > max_y_index + 90:
+        noise_segment_length *= np.random.randint(4,9) # (3,8) før
     
     end = start + noise_segment_length
     while end > 639:
         end -= 1
 
     segment = arr[1, start:end]
-    noise = np.random.uniform(-0.07, 0.07)
+    noise = np.random.uniform(-0.05, 0.05)
     gaussian_noise = np.random.normal(0, 0.0005, segment.shape)
 
     
@@ -117,14 +142,14 @@ def add_noise(arr, noise_segment_length, max_y_index):
 
 
 
-
 class LaserPointDataset(Dataset):
     def __init__(self,
                  root,
                  noise=True,
                  return_gt=False, 
                  corrected=False,
-                 normalization='dataset'
+                 normalization='dataset',
+                 test = False,
                  ):
 
         self.root = root
@@ -132,8 +157,33 @@ class LaserPointDataset(Dataset):
         self.return_gt = return_gt
         self.corrected = corrected
         self.normalization_type = normalization
+
+
+        
+        renders = os.listdir(self.root)
+        renders = [i for i in renders if (i[-3:] != 'npy' and i[-3:] != 'exr')]
+        
+        renders = [int(i) for i in renders]
+        renders.sort()
+        renders = renders[:115]
+        test_set = [i for i in renders if i % 8 == 0]
+        training_set = [i for i in renders if i not in test_set]
+
+        if test:
+            self.renders = test_set
+        else:
+            self.renders = training_set
+
+    
+        #print(self.renders)
+        #renders = renders[:70]
+        #renders.pop()
+        #renders = [str(i) for i in renders]
+
     def __getitem__(self, index):
-        render = str((index // 20) + 1)
+        render = (index // 20)
+        render = str(self.renders[render])
+
         idx = str((index % 20) + 1)
         while len(idx) < 4:
             idx = '0' + idx
@@ -153,20 +203,24 @@ class LaserPointDataset(Dataset):
 
         
         if self.noise:
-
-            idx = np.round(np.linspace(0, len(gt[0]) - 1, 640)).astype(int)
-            ## adds noise at the indices where the x-value of the estimate and gt differ
-            h = np.where((abs(gt[0][idx] - est[0]) < 0.19) & (abs(gt[0][idx] - est[0]) > 0.01))
-            ##print((h))
-            ## adds the difference mulitplied with a random scalar
-            est[2][h] = est[2][h] + np.random.uniform(0.5, 2) * (gt[0][h] - est[0][h])
+            if np.random.rand() > 0.6:
+                idx = np.round(np.linspace(0, len(gt[0]) - 1, 640)).astype(int)
+                ## adds noise at the indices where the x-value of the estimate and gt differ
+                h = np.where((abs(gt[0][idx] - est[0]) < 0.19) & (abs(gt[0][idx] - est[0]) > 0.01))
+                ##print((h))
+                ## adds the difference mulitplied with a random scalar
+                est[2][h] = est[2][h] + np.random.uniform(0., 2) * (gt[0][h] - est[0][h])
             
             # TRANSLATION       
             est, corner_points = move_points(est, corner_points)
             # ROTATION
-            est, corner_points = rotate_points(est, corner_points)
+            #est, corner_points = rotate_points(est, corner_points)
             
             est = est[1:] 
+
+            # AFFINE 
+
+            est, corner_points = affine_transformation(est, corner_points)
             
             ## manually added segment noise
             max_y_index = np.argmax(est[-1])
@@ -175,7 +229,7 @@ class LaserPointDataset(Dataset):
                 noise_segment_length = np.random.randint(1,20)
                 est = add_noise(est, noise_segment_length, max_y_index)
             
-            est, corner_points = change_x_range(est, corner_points)
+            #est, corner_points = change_x_range(est, corner_points)
         else:
             est = est[1:]   
         if self.normalization_type == 'dataset':
@@ -193,30 +247,31 @@ class LaserPointDataset(Dataset):
             return est, corner_points
 
     def __len__(self):
-        renders = os.listdir(self.root)
-        renders = [i for i in renders if (i[-3:] != 'npy' and i[-3:] != 'exr')]
+        #renders = os.listdir(self.root)
+        #renders = [i for i in renders if (i[-3:] != 'npy' and i[-3:] != 'exr')]
+        #
+        #renders = [int(i) for i in renders]
+        #renders.sort()
+        ##print(renders)
+        #renders = renders[50:108]
+        ##renders.pop()
+        #renders = [str(i) for i in renders]  
         
-        renders = [int(i) for i in renders]
-        renders.sort()
-        #print(renders)
-        #renders = renders[:70]
-        #renders.pop()
-        renders = [str(i) for i in renders]  
-        
-        return len(renders) * 20
+        return len(self.renders) * 20
 
 
 if __name__ == "__main__":
-    dataset = LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, return_gt=True, corrected=True, normalization='')
+    dataset = LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, return_gt=True, corrected=True, normalization='', test=False)
     dataset2 = LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=False, return_gt=True, corrected=False, normalization='')
     #print(dataset[17])
-    #print(len(dataset))
-    #e, g, p = dataset[45]
-    for i in range(len(dataset)):
-        e, g, p = dataset[i]
-        if (len(p[1])) != 5:
-            print(p.shape)
-            print(i)
+    print(len(dataset), 'dataset len')
+    e, g, p = dataset[400]
+    print(p.shape,'asdf')
+    #for i in range(len(dataset)):
+    #    e, g, p = dataset[i]
+    #    if (len(p[1])) != 5:
+    #        print(p.shape)
+    #        print(i)
        # print(p.shape)
 
     #e2, _, _ = dataset2[590]

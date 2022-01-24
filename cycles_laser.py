@@ -14,10 +14,11 @@ class LaserSetup():
             self.laser = self.create_luxcore_laser()
         
         self.groove_angle = radians(groove_angle)
-        self.camera = self.add_camera()
-        self.camera.parent = self.laser
         self.min_dist = min_dist
         self.max_dist = max_dist
+        self.camera = self.add_camera()
+        self.camera.parent = self.laser
+        
         
     
     
@@ -91,7 +92,7 @@ class LaserSetup():
         
         laser.data.luxcore.image = bpy.data.images.load("/home/oyvind/Documents/laser-blur.png")
         # changes the "spot shape" to 25 degres, should be equivalent to a laser with the same aperture angle 
-        laser.data.spot_size = 0.436332
+        laser.data.spot_size = 0.50 #0.436332
         
         # increase importance to make the laser line visible in viewport
         laser.data.luxcore.importance = 200
@@ -99,8 +100,8 @@ class LaserSetup():
         # change light unit to power
         laser.data.luxcore.light_unit = "power"
         
-        laser.data.luxcore.power = 10
-        laser.data.luxcore.efficacy = 7
+        laser.data.luxcore.power = 15 # 10 før
+        laser.data.luxcore.efficacy = 9 # 7 før
         
         return laser
         
@@ -154,8 +155,10 @@ class LaserSetup():
         """
         Rotates the setup
         """
-
-        rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise))), 4, axis)
+        if axis == 'X':
+            rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise+4))), 4, axis)
+        else:
+            rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise))), 4, axis)
         self.laser.matrix_world = self.laser.matrix_world @ rot
         
         
@@ -180,7 +183,8 @@ class LaserSetup():
         
         translation = random.uniform(0.06, 0.1)
         
-        mid_point = 0.24
+        mid_point = (self.min_dist + self.max_dist) / 2
+        #mid_point = 0.24
         
         angle = atan(translation / mid_point)
         

@@ -14,12 +14,12 @@ from conv2d import Conv2DNetwork
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-#net = model.SimpleNetwork2()
+#net = model.SimpleNetwork3()
 net = model.ResidualNetwork()
 #net = Conv2DNetwork()
 #et = model.FeedForwardNet()
 
-state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_lessLRDecay.pth')
+state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_EuclideanLoss_94kernel_bs64.pth')
 
 
 
@@ -30,9 +30,9 @@ pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_gra
 print('num parameters:',pytorch_total_params)
 
 hei = np.load('/home/oyvind/Downloads/3mmRoot_noNoise.npy')
-#hei = np.load('/home/oyvind/Downloads/3mmRoot_VLstubNoise.npy')
-#hei = np.load('/home/oyvind/Downloads/3mmRoot_HstubNoise.npy')
-hei2 = np.load('/home/oyvind/Blender-weldgroove/render/27/processed_images/points_0002/0002_EST_fixed.npy')
+hei = np.load('/home/oyvind/Downloads/3mmRoot_VLstubNoise.npy')
+hei = np.load('/home/oyvind/Downloads/3mmRoot_HstubNoise.npy')
+hei2 = np.load('/home/oyvind/Blender-weldgroove/render/99/processed_images/points_0002/0002_EST_fixed.npy')
 chei = hei
 chei2 = hei2[1:] * 1000
 
@@ -58,7 +58,7 @@ hei = hei/1000
 hei = torch.from_numpy(np.array(hei))
 hei = hei.type(torch.float32)
 #t = transforms.Normalize((0.0016, 0.2542), (0.0318, 0.0260))
-t = transforms.Normalize((0.0011, 0.2079), (0.0253, 0.0180))
+t = transforms.Normalize((0.0012, 0.2145), (0.0263, 0.0183))
 hei = hei.unsqueeze(0)
 hei = hei.permute(1, 0, 2)
 hei = t(hei)
@@ -91,11 +91,14 @@ hmm2 = hmm2.squeeze()
 
 #print(chei)
 plt.scatter(chei[0], chei[1],s=1)
-plt.scatter(hmm[0], hmm[1], s=20)
-plt.show()
+plt.scatter(hmm[:,0], hmm[:,1], s=20) # når output (B, 5, 2)
+#plt.scatter(hmm[0], hmm[1], s=20) # når output (B, 2, 5)
+#plt.show()
 
 plt.scatter(chei2[0], chei2[1],s=1)
-plt.scatter(hmm2[0], hmm2[1], s=20)
+plt.scatter(hmm2[:,0], hmm2[:,1], s=20) # når output (B, 5, 2)
+
+#plt.scatter(hmm2[0], hmm2[1], s=20)
 plt.show()
 
 #print(ut)

@@ -20,7 +20,7 @@ class GTPointExtractionDataset(Dataset):
         
         path = os.path.join(self.root, render, 'processed_images' ,'points_' + idx)
         if self.corrected:
-            print("corrected")
+            #print("corrected")
             gt = np.load(path + '/' + idx + '_GT_fixed.npy')
             est = np.load(path + '/' + idx + '_EST_fixed.npy')
         else:
@@ -49,9 +49,9 @@ if __name__ == "__main__":
 
     root = '/home/oyvind/Blender-weldgroove/render'
     dataset = GTPointExtractionDataset(root, corrected)
-    print('length dataset:', len(dataset))
+    #print('length dataset:', len(dataset))
     dataset[5]
-    img = 1709 # 1340 first images ok
+    img = 2180#2209 # 1340 first images ok
     h = img
     # extract only ground-truth from the datataset
     while img < len(dataset):
@@ -83,52 +83,82 @@ if __name__ == "__main__":
         #print(std)
 
         render = (img // 20) + 1
+        print('render:', render)
 
-        scalar = 3.5 # spesielle tilfeller ---- render 77: 2.8;
+        scalar = 3.5 # vanligvis 3.5; spesielle tilfeller ---- render 77: 2.8; render 103: 2.5;
+        mas = [103, 104, 108, 109, 110, 114]
+        if render == 115:
+            scalar = 1.5
+        if render == 77:
+            scalar = 2.8
+        elif render in mas:
+            print('special case - reducing scalar value')
+            scalar = 2.5
+        
         h = np.where(abs(sd) > mean_sd + scalar * std)
         #print(sd[h])
 
-        h_len = 10
+        min_index = 100
+        if render == 94:
+            min_index = 300
+        h = h[0]
+        h = [i for i in h if i > min_index] # fails if early points are falsely identified as candidates
 
-        if img == 1583 or img == 1709:
+        h_len = 10 # vanligvis 10
+
+        if img == 1583 or img == 1709 or img == 2178 or img == 2209 or render == 114:
             h_len = 30
+        elif img == 2120 or img == 2137:
+            h_len = 7
         
-        while len(h[0]) > h_len: # spesielle tilfeller ---- img 1583: 30; img 1709: 30;
+        while len(h) > h_len: # spesielle tilfeller ---- img 1583: 30; img 1709: 30;
             print(h, 'asdf')
             print('an excessive amount of corner points - increasing requirements...')
-            scalar += 0.5
+            scalar += 0.3
             h = np.where(abs(sd) > mean_sd + scalar * std)
-        h_std = (np.std(h))
+            h = h[0]
+            h = [i for i in h if i > min_index]
+        h_std = np.std(h)
         print(h_std)
         old_h = h
 
         reduced_scalar = False
-        while h_std < 23:
+
+        special_renders_std = [110, 112]
+        min_standard_deviation = 23
+        if render in special_renders_std:
+            min_standard_deviation = 30
+        
+        while h_std < min_standard_deviation: # 23
             print('too few potential corner points - reducing requirements...')
             scalar -= 0.5
             h = np.where(abs(sd) > mean_sd + scalar * std)
-            new_points = [i for i in h[0] if i not in old_h[0]]
+            h = h[0]
+            h = [i for i in h if i > min_index]
+            new_points = [i for i in h if i not in old_h]
             h_std = np.std(h)
             print(h_std)
             reduced_scalar = True
 
         if reduced_scalar:
-            new_h = [i for i in old_h[0]]
+            new_h = [i for i in old_h]
             for point in new_points:
-                different_indices = old_h[0][np.where(abs(old_h[0] - point) > 5)] 
-                if len(different_indices) > len(old_h[0]) * 0.9:
+                different_indices = np.array(old_h)[np.where(abs(old_h - point) > 5)[0]] 
+                if len(different_indices) > len(old_h) * 0.9:
                     new_h.append(point)
-
-            h = new_h
-        else:
-            h = h[0].tolist()
+            h = sorted(new_h)
+        #else:
+        #   h = h.tolist()
 
 
         corner_points = []
         print((h))
         
-        diff = h[-1] - h[0]
-        #print(h_std)
+        sd_diff = 1.47
+        special_renders_sd_diff = [108, 109, 110, 111, 112, 113, 114, 115]
+        if render in special_renders_sd_diff:
+            sd_diff = 0.3
+
         
         while len(corner_points) < 3:
             #print('asdf')
@@ -146,14 +176,14 @@ if __name__ == "__main__":
                 i = 1
                 removed = 0
                 while h[i+1] - h[i] < h_std + 10 and h[-1] - h[i+1] > 5:
-                    if h[i+1] - h[i] < 3 + removed:
+                    if h[i+1] - h[i] < 33 + removed:
                         if g[1][h[i+1]] > g[1][h[i]] or (abs(g[1][h[i+1]] - g[1][h[i]]) * 3 < abs(g[1][h[i+1] + 1] - g[1][h[i+1]])):
                             print('asdfasdf') 
                             #print(abs(g[1][h[i+1]] - g[1][h[i]]) * 3)
                             #print(abs(g[1][h[i+2]] - g[1][h[i+1]]))
                             print('removing', h[i])
                             h.pop(i)
-                        elif abs(sd[h[i+1]]) > abs(sd[h[i]]) * 3:
+                        elif abs(sd[h[i+1]]) > abs(sd[h[i]]) * sd_diff: #1.47
                             
                             print('jalla')
                             h.pop(i)
@@ -234,13 +264,13 @@ if __name__ == "__main__":
         
         est = est[1:] * 1000
         
-        """
-        if img % 1 == 0:
-            plt.scatter(g[0], g[1], s=1)
-            #plt.scatter(est[0], est[1], s=1)
-            plt.scatter(groove_corners[:,0], groove_corners[:,1], s=20, color='g')
-            plt.show()
-        """
+        
+        #if img % 1 == 0:
+        #    plt.scatter(g[0], g[1], s=1)
+        #    plt.scatter(est[0], est[1], s=1)
+        #    plt.scatter(groove_corners[:,0], groove_corners[:,1], s=20, color='g')
+        #    plt.show()
+        #
         
        
        # np.save()
