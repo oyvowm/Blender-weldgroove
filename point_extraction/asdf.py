@@ -1,4 +1,4 @@
-from numpy import core
+from numpy import core, short
 import torch
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class GTPointExtractionDataset(Dataset):
-    def __init__(self, root, corrected=False):
+    def __init__(self, root, corrected=False, remove_outliers=False):
         self.root = root
         self.corrected = corrected
+        self.remove_outliers = remove_outliers
 
     def __getitem__(self, index):
         render = str((index // 20) + 1)
@@ -19,6 +20,20 @@ class GTPointExtractionDataset(Dataset):
             idx = '0' + idx
         
         path = os.path.join(self.root, render, 'processed_images' ,'points_' + idx)
+
+        #if not self.remove_outliers:
+        while os.path.exists(path + '/' + idx + '_GT.npy') == False:
+            print('path doesnt exist -- sampling a random index to use instead') 
+            i = np.random.randint(1,21)
+            i = str(i)
+            if len(i) == 1:
+                idx = idx[:-1] + i
+            else:
+                idx = idx[:-2] + i
+            path = os.path.join(self.root, render, 'processed_images' ,'points_' + idx)
+            print('new path: ', path)
+        
+
         if self.corrected:
             #print("corrected")
             gt = np.load(path + '/' + idx + '_GT_fixed.npy')
@@ -51,11 +66,11 @@ if __name__ == "__main__":
     dataset = GTPointExtractionDataset(root, corrected)
     #print('length dataset:', len(dataset))
     dataset[5]
-    img = 2180#2209 # 1340 first images ok
+    img = 5860#2209 # 3560 first images ok
     h = img
     # extract only ground-truth from the datataset
     while img < len(dataset):
-        print('i = ',img)
+        print('\n','i = ',img, '\n')
         g, est = dataset[img]
 
         # converts to [mm]
@@ -74,7 +89,6 @@ if __name__ == "__main__":
                 d.append((g[1][i+1] - g[1][i-1]) / ((g[0][i+1] - g[0][i]) + (g[0][i] - g[0][i-1])))
                 sd.append(g[1][i + 1] - 2 * g[1][i] + g[1][i-1])
         #print(len(d))
-        #print(len(sd))
 
         sd = np.array(sd)
         mean_sd = np.mean(sd)  
@@ -86,14 +100,23 @@ if __name__ == "__main__":
         print('render:', render)
 
         scalar = 3.5 # vanligvis 3.5; spesielle tilfeller ---- render 77: 2.8; render 103: 2.5;
-        mas = [103, 104, 108, 109, 110, 114]
-        if render == 115:
-            scalar = 1.5
-        if render == 77:
-            scalar = 2.8
-        elif render in mas:
+        mas = [103, 104, 108, 109, 110, 114, 117, 118, 123, 128, 129, 133,
+               146, 159, 160, 161, 170, 174 ,175, 179, 183, 189, 200, 222, 
+               228, 236, 239, 251, 252, 259, 278, 280, 281, 284]
+        if render in mas:
             print('special case - reducing scalar value')
             scalar = 2.5
+        elif render == 115 or render == 140 or render == 221 or render == 273:
+            scalar = 1.5
+        elif render == 77:
+            scalar = 2.8
+        elif render == 149:
+            scalar = 4.5
+        elif render == 193 or render == 202 or render == 205 or render == 275:
+            scalar = 4.0
+        elif render == 285:
+            scalar = 2.
+        
         
         h = np.where(abs(sd) > mean_sd + scalar * std)
         #print(sd[h])
@@ -106,15 +129,28 @@ if __name__ == "__main__":
 
         h_len = 10 # vanligvis 10
 
-        if img == 1583 or img == 1709 or img == 2178 or img == 2209 or render == 114:
+        extra_len_img = [1583, 1709, 2178, 2209, 3093]
+        longer_len_render = [273, 284, 285]
+        extra_len_render = [114, 128, 146, 153, 160, 282, 292, 293]
+        shorter_len_render = [143]
+
+        if img in extra_len_img or render in extra_len_render:
+            print('asdfost')
             h_len = 30
-        elif img == 2120 or img == 2137:
+        elif img == 2120 or img == 2137 or img == 3085 or render in shorter_len_render:
             h_len = 7
+        elif render in longer_len_render:
+            h_len = 17
+        elif render == 294:
+            h_len = 4
         
         while len(h) > h_len: # spesielle tilfeller ---- img 1583: 30; img 1709: 30;
             print(h, 'asdf')
             print('an excessive amount of corner points - increasing requirements...')
-            scalar += 0.3
+            if render > 174:
+                scalar += 0.1
+            else:
+                scalar += 0.3
             h = np.where(abs(sd) > mean_sd + scalar * std)
             h = h[0]
             h = [i for i in h if i > min_index]
@@ -124,14 +160,23 @@ if __name__ == "__main__":
 
         reduced_scalar = False
 
-        special_renders_std = [110, 112]
-        min_standard_deviation = 23
-        if render in special_renders_std:
+        high_std = [110, 112]
+        low_std = [158, 196, 236, 237, 264]
+        lower_std = [170, 171, 174, 176, 195, 215, 227, 245, 254]
+        min_standard_deviation = 23 # 23
+        if render in high_std:
             min_standard_deviation = 30
+        elif render in low_std:
+            min_standard_deviation = 20
+        elif render in lower_std:
+            min_standard_deviation = 15
         
         while h_std < min_standard_deviation: # 23
             print('too few potential corner points - reducing requirements...')
-            scalar -= 0.5
+            if render > 174:
+                scalar -= 0.1
+            else:
+                scalar -= 0.5
             h = np.where(abs(sd) > mean_sd + scalar * std)
             h = h[0]
             h = [i for i in h if i > min_index]
@@ -155,10 +200,17 @@ if __name__ == "__main__":
         print((h))
         
         sd_diff = 1.47
-        special_renders_sd_diff = [108, 109, 110, 111, 112, 113, 114, 115]
-        if render in special_renders_sd_diff:
-            sd_diff = 0.3
+        lower_sd_diff = [108, 109, 110, 111, 112, 113, 114, 115, 117, 118] #120, 121, 122, 123, 124]
+        special_case_sd_diff = [137, 176, 177, 179, 180, 183, 187, 195, 196, 
+                                198, 199, 201, 214, 215, 218, 222, 227, 234, 241, 250,
+                                254, 255, 261, 263, 264, 270, 272, 275, 289]
+        if render in special_case_sd_diff:
+            sd_diff = 1.
+        elif render in lower_sd_diff or render > 120:
+            sd_diff = 0.35
 
+        
+        print(sd_diff)
         
         while len(corner_points) < 3:
             #print('asdf')
@@ -171,22 +223,37 @@ if __name__ == "__main__":
                     else:
                         h.pop(i+1)
                 corner_points.append(h[0])
+                print(h)
             elif len(corner_points) == 1:
                 #print(h)
                 i = 1
                 removed = 0
                 while h[i+1] - h[i] < h_std + 10 and h[-1] - h[i+1] > 5:
-                    if h[i+1] - h[i] < 33 + removed:
-                        if g[1][h[i+1]] > g[1][h[i]] or (abs(g[1][h[i+1]] - g[1][h[i]]) * 3 < abs(g[1][h[i+1] + 1] - g[1][h[i+1]])):
+                    #print(h[i+1])
+                    #print(h[i])
+                    #print(removed)
+                    if h[i+1] - h[i] < 127 + removed: #33 første 179
+                        #print(abs(g[1][h[i] + 1] - g[1][h[i]]))
+                        #print(abs(g[1][h[i+1] + 1] - g[1][h[i+1]]))
+                        #print(removed / len(h), 'øøøøøø')
+                        if len(h) > 5 and removed / len(h) < 0.55: # if most of the candidates already are removed the scalar s is increased
+                            s = 1.
+                        else:
+                            s = 3
+                        if g[1][h[i+1]] > g[1][h[i]] or (abs(g[1][h[i] + 1] - g[1][h[i]]) * s < abs(g[1][h[i+1] + 1] - g[1][h[i+1]])):
                             print('asdfasdf') 
                             #print(abs(g[1][h[i+1]] - g[1][h[i]]) * 3)
                             #print(abs(g[1][h[i+2]] - g[1][h[i+1]]))
                             print('removing', h[i])
                             h.pop(i)
+                            removed += 1
                         elif abs(sd[h[i+1]]) > abs(sd[h[i]]) * sd_diff: #1.47
-                            
+                            print(abs(sd[h[i+1]]))
+                            print(abs(sd[h[i]]))
                             print('jalla')
+                            print('removing:', h[i])
                             h.pop(i)
+                            removed += 1
                         else:
                             #print(abs(sd[h[i+1]]))
                             #print(abs(sd[h[i]]))
@@ -195,10 +262,11 @@ if __name__ == "__main__":
                             h.pop(i+1)
                             removed += 1
                     else:
+                        #print('removing: ', h[i] )
                         h.pop(i)
                         if removed > 0:
                             removed -= 1
-                    #print(h)
+                    print(h)
                 corner_points.append(h[1])
             
             else:
@@ -256,20 +324,20 @@ if __name__ == "__main__":
         #plt.scatter(cross_point[0], cross_point[1], s=20, color='r')
 
         
-        if img % 1 == 0:
-            plt.scatter(g[0][corner_points[0]-30:corner_points[-1] + 10], g[1][corner_points[0]-30:corner_points[-1] + 10], s=1)
-            plt.scatter(groove_corners[:,0][1:-1], groove_corners[:,1][1:-1], s=20, color='g')
-            plt.show()
+        #if img % 1 == 0:
+        #    plt.scatter(g[0][corner_points[0]-30:corner_points[-1] + 10], g[1][corner_points[0]-30:corner_points[-1] + 10], s=1)
+        #    plt.scatter(groove_corners[:,0][1:-1], groove_corners[:,1][1:-1], s=20, color='g')
+        #    plt.show()
         #break
         
         est = est[1:] * 1000
         
         
-        #if img % 1 == 0:
-        #    plt.scatter(g[0], g[1], s=1)
-        #    plt.scatter(est[0], est[1], s=1)
-        #    plt.scatter(groove_corners[:,0], groove_corners[:,1], s=20, color='g')
-        #    plt.show()
+        if img % 1 == 0:
+            plt.scatter(g[0], g[1], s=1, color="r")
+            plt.scatter(est[0], est[1], s=1)
+            plt.scatter(groove_corners[:,0], groove_corners[:,1], s=20, color='g')
+            plt.show()
         #
         
        

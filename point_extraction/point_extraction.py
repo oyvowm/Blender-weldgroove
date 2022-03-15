@@ -33,6 +33,7 @@ def gray_gravity(img_path):
     #print(im.shape)
 
     start = time.time()
+    # extracts top n indices and values
     top_indices = np.argpartition(im, -3, axis=0)[-3:]
     top_values = np.partition(im, -3, axis=0)[-3:]
 
@@ -108,8 +109,8 @@ if __name__ == "__main__":
     renders = [render for render in renders if (render[-3:] != "npy" and render[-3:] != "exr")]
     renders = [int(i) for i in renders]
     renders.sort()
-    renders.pop()
-    #renders = renders[52:] # to only process a certain subset
+    #renders.pop()
+    renders = renders[279:295] # to only process a certain subset
     renders = [str(i) for i in renders]  
     print(renders)
 
@@ -144,15 +145,21 @@ if __name__ == "__main__":
             rotation_matrix = tmatrix[0:3,0:3]
 
             # since scale transform cannot be applied in Blender for light objects, it's applied here
-            
-            rotation_matrix[0][0] = rotation_matrix[0][0] * (1 / 0.8)
+            # these two entries are changed through rotations in Blender.
+            if int(render) < 119:
+                rotation_matrix[0][0] = rotation_matrix[0][0] * (1 / 0.8)
+                rotation_matrix[0][2] = rotation_matrix[0][2] * (1 / 0.8)
+            elif int(render) > 174:
+                rotation_matrix[0][0] = rotation_matrix[0][0] * (1 / 0.5)
+                rotation_matrix[0][2] = rotation_matrix[0][2] * (1 / 0.5)
          
             translation = tmatrix[0:3,-1:]
             # For some reason the transformation matrix of the scanner is not updated when using render keyframes, it is therefore stuck with a translation of -0.18m in the world coordinate frame
             # therefore, for the first 50 renders, the x-value of the laser scanner is replaced by the average x-value of the ground truth points.
             if int(render) < 51:
                 translation[0] = np.average(ground_truth[0])
-                
+            
+            #print(translation[0], 'translation x  render:', render)
             # for render >= 57 the tmatrix should contain the actual x-value.
 
             inverse_rotation = rotation_matrix.transpose()
@@ -179,11 +186,3 @@ if __name__ == "__main__":
             np.save(images_path + "/processed_images/points_" + img_num + '/' + img_num + '_GT', ground_truth)
             np.save(images_path + "/processed_images/points_" + img_num + '/' + img_num + '_EST', estimate)
 
-
-#array([[-0.18000001],
-#       [ 0.21943058],
-#       [ 0.04645395]])
-
-#array([[ 0.80000001,  0.        ,  0.        ],
-#       [ 0.        ,  0.68764287,  0.72604913],
-#       [ 0.        , -0.72604913,  0.68764287]])

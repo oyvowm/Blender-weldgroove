@@ -15,8 +15,8 @@ renders = os.listdir(render_path)
 renders = [render for render in renders if (render[-3:] != "npy" and render[-3:] != "exr")]
 renders = [int(i) for i in renders]
 renders.sort()
-renders.pop()
-#renders = renders[52:] # to only process a certain subset
+#renders.pop()
+renders = renders[:296] # to only process a certain subset
 renders = [str(i) for i in renders]
 
 print(renders)
