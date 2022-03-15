@@ -7,7 +7,7 @@ from scipy.stats import truncnorm
 class LaserSetup():
 
     
-    def __init__(self, laser_type, groove_angle, min_dist=0.21, max_dist=0.32): # min_dist = 0.19 for 45 first renders
+    def __init__(self, laser_type, groove_angle, min_dist=0.26, max_dist=0.39): # min_dist = 0.19 for 45 first renders
         if laser_type == "cycles":
             self.laser = self.create_cycles_laser()
         elif laser_type == "luxcore":
@@ -85,14 +85,14 @@ class LaserSetup():
         
         laser = bpy.context.active_object
         
-        laser.scale[0] = 0.8
+        laser.scale[0] = 0.5 # 0.8 first 118, 1.0 174
         
         # ensure that the spotlight doesnt use cycles settings
         laser.data.luxcore.use_cycles_settings = False
         
         laser.data.luxcore.image = bpy.data.images.load("/home/oyvind/Documents/laser-blur.png")
         # changes the "spot shape" to 25 degres, should be equivalent to a laser with the same aperture angle 
-        laser.data.spot_size = 0.50 #0.436332
+        laser.data.spot_size = 0.47 #0.436332, 0.50
         
         # increase importance to make the laser line visible in viewport
         laser.data.luxcore.importance = 200
@@ -100,7 +100,7 @@ class LaserSetup():
         # change light unit to power
         laser.data.luxcore.light_unit = "power"
         
-        laser.data.luxcore.power = 15 # 10 før
+        laser.data.luxcore.power = 19 # 10 før, deretter 15
         laser.data.luxcore.efficacy = 9 # 7 før
         
         return laser
@@ -124,7 +124,7 @@ class LaserSetup():
         # moves laser by a random angle drawn from a truncated normal distribution
         
         mean = self.groove_angle / 2
-        sigma = self.groove_angle / 4
+        sigma = self.groove_angle / 5 # 4 for first 162 ish, 3 until 282
         lower = 0 + acute
         upper = self.groove_angle - acute
         
@@ -156,12 +156,10 @@ class LaserSetup():
         Rotates the setup
         """
         if axis == 'X':
-            rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise+4))), 4, axis)
+            rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise+2))), 4, axis)
         else:
             rot = Matrix.Rotation((-angle + radians(random.uniform(-noise, noise))), 4, axis)
         self.laser.matrix_world = self.laser.matrix_world @ rot
-        
-        
     def move_laser(self, distance):
         """
         Moves the laser along the x-axis of the world coordinate frame.
@@ -181,7 +179,7 @@ class LaserSetup():
         # turn off clipping 
         camera.data.luxcore.use_clipping = False
         
-        translation = random.uniform(0.06, 0.1)
+        translation = random.uniform(0.04, 0.12) # 0.06, 0.1
         
         mid_point = (self.min_dist + self.max_dist) / 2
         #mid_point = 0.24
@@ -191,8 +189,8 @@ class LaserSetup():
         print(angle, 'angle')
         
         # intrinsic parameters
-        sensor_width = random.uniform(7,9)
-        focal_length = random.uniform(10,12)
+        sensor_width = random.uniform(6,10) # (7,9)
+        focal_length = random.uniform(9,13) # (10,12)
 
         # sets the sensor size of the camera
         camera.data.sensor_width = sensor_width

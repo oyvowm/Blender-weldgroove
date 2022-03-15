@@ -27,6 +27,10 @@ class DefineMaterial():
     @classmethod
     def cycles_brushed_iron(cls):
         return cls("brushed_iron_01/BrushedIron01_4K", cls.cycles_material)
+    
+    @classmethod
+    def luxcore_brushed_metal(cls):
+        return cls("brushed_metal_01/Metal010_4K", cls.luxcore_material)
 
 
     def luxcore_material(new_material, root):

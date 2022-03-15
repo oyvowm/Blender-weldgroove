@@ -68,7 +68,7 @@ def luxcore_main_scene(halt_time, engine='bidir'):
 
     main_scene.render.resolution_x = 2448
     main_scene.render.resolution_y = 2048
-    main_scene.render.resolution_percentage = 80    
+    main_scene.render.resolution_percentage = 90    # 80 first 282
     
     ### setup diffuse scene
     luxcore_new_scene(engine)

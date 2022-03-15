@@ -11,7 +11,7 @@ laser_setup = bpy.data.texts["cycles_laser.py"].as_module()
 utils = bpy.data.texts["utils.py"].as_module()
 
 # updates scene parameters
-utils.luxcore_main_scene(16, 'asdf')
+utils.luxcore_main_scene(12, 'asdf') # z> 16 for first 282
 
 # adds diffuse material
 material.diffuse_material()
@@ -27,7 +27,7 @@ if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
 else:
     iteration = 1
 print(iteration)
-stop = 108
+stop = 296
 
 # sample angle between laser and weld groove normal
 norm_angle = np.radians(np.random.uniform(-4, 4))
@@ -45,12 +45,12 @@ if stop - iteration > 0:
                 bpy.data.objects.remove(obj)
         
         # create the weld groove
-        groove_angle = np.random.randint(25,50) # 30, 46 first 106
+        groove_angle = np.random.randint(20,55) # 30, 46 first 106
         #groove_dist = np.random.choice([0.00, 0.003, 0.01])
-        brace_rotation = np.random.randint(-20, 55) # (-20, 40) first 80 renders
+        brace_rotation = np.random.randint(-10, 60) # (-20, 40) first 80 renders
         
         # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-        groove_dist = 0.004 # 0.003 for first 69 renders, 0.005 - 106
+        groove_dist = 0.008 # 0.003 for first 69 renders, 0.005 - 106, 0.004 162
         
         while groove_angle + brace_rotation < 20:
             print("Current values gives no groove opening, sampling new values...")
@@ -58,12 +58,14 @@ if stop - iteration > 0:
             brace_rotation = np.random.randint(-20, 55)
         
         
-        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness = 0.03, groove_width=0.4, brace_rotation=brace_rotation)
-
+        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness = 0.026, groove_width=0.4, brace_rotation=brace_rotation)
+        # 0.015 til 223, 0.01 til 254
+        
+        
         ### MATERIAL ###
         
         # uses the factory method associated with the desired material and render engine
-        mat = material.DefineMaterial.luxcore_brushed_iron2()
+        mat = material.DefineMaterial.luxcore_brushed_metal()
 
         # makes the newly defined material the active one
         if weld_groove.brace.data.materials:
@@ -162,25 +164,25 @@ else:
     
     
     # create the weld groove
-    groove_angle = np.random.randint(30,46)
+    groove_angle = np.random.randint(20,40)
     #groove_dist = np.random.choice([0.00, 0.003, 0.01])
-    brace_rotation = np.random.randint(-20, 55)
+    brace_rotation = np.random.randint(-20, 20)
     
     # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-    groove_dist = 0.005
+    groove_dist = 0.008
     
     while groove_angle + brace_rotation < 20:
         print("Current values gives too small groove opening, sampling new values...")
-        groove_angle = np.random.randint(30,46)
+        groove_angle = np.random.randint(40,50)
         brace_rotation = np.random.randint(-20, 45)
         
     
-    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness=0.03, groove_width = 0.4, brace_rotation=brace_rotation)
+    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness=0.026, groove_width = 0.4, brace_rotation=brace_rotation)
 
     ### MATERIAL ###
 
     # uses the factory method associated with the desired material and render engine
-    mat = material.DefineMaterial.luxcore_brushed_iron2()
+    mat = material.DefineMaterial.luxcore_brushed_metal()
 
     # makes the newly defined material the active one
     if weld_groove.brace.data.materials:
