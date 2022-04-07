@@ -58,7 +58,7 @@ def cloud_normalization(arr):
 
 def move_points(arr, labels):
     # moves the entire point cloud by random amounts along the x- and y-axis
-    to_move_x = np.random.uniform(-0.002, 0.002)
+    to_move_x = np.random.uniform(-0.004, 0.004)
     to_move_y = np.random.uniform(-0.008, 0.015)
 
     arr[-2] = arr[-2] + to_move_x
@@ -72,7 +72,7 @@ def move_points(arr, labels):
 
 
 def affine_transformation(arr, labels):
-    angle = np.random.uniform(-3, 3) # -30, 30
+    angle = np.random.uniform(-15, 15) # -30, 30
     #angle = 0
     rot_x = rot_matrix('x', angle)
     rot_x = rot_x[1:,1:]
@@ -204,7 +204,7 @@ class LaserPointDataset(Dataset):
         
         renders = [int(i) for i in renders]
         renders.sort()
-        renders = renders[:294]
+        renders = renders[:312]
         test_set = [i for i in renders if i % 20 == 0]
         training_set = [i for i in renders if i not in test_set]
 
@@ -297,7 +297,7 @@ class LaserPointDataset(Dataset):
             est, corner_points = affine_transformation(est, corner_points)
             
             # REFLECTION OF GROOVE
-            if np.random.rand() > 0.5:
+            if np.random.rand() > 0.6:
                 try:
                     est = reflect_groove(est, idx[1:-2])
                 except:
@@ -339,7 +339,7 @@ class LaserPointDataset(Dataset):
 
 
             ## manually added segment noise
-            num_noise_segments = np.random.randint(0,3)
+            num_noise_segments = np.random.randint(0,6)
             for _ in range(num_noise_segments):
                 noise_segment_length = np.random.randint(8,20)
                 est = add_noise(est, noise_segment_length, idx)

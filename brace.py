@@ -84,7 +84,7 @@ class WeldGroove():
         bpy.ops.object.editmode_toggle()
 
         # extruding the leg object as to resemble a cylindrical shape
-        bpy.ops.mesh.spin(steps=60, angle=np.pi / 5, center=(0, 0, -0.6), axis=(1, 0, 0)) 
+        bpy.ops.mesh.spin(steps=60, angle=np.pi / 3, center=(0, 0, -0.25), axis=(1, 0, 0)) 
         # center = 0.8 for first 92, 0.9 until 193, 
         # angle=np.pi / 6,
         

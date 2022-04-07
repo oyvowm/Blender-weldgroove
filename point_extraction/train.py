@@ -18,12 +18,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print(device)
 
-#torch.manual_seed(1) # set seed for reproducibility
+torch.manual_seed(1) # set seed for reproducibility
 
-PATH = '/home/oyvind/Blender-weldgroove/ResNet_NewSet65.pth' #24 # 26
+PATH = '/home/oyvind/Blender-weldgroove/ResNet_NewSet80.pth' #24 # 26
 
 config = {
-    "num_epochs": 400,  
+    "num_epochs": 1200,  
     "batch_size": 64, 
     "lr": 1e-3,
     "continue_training": True,
@@ -41,7 +41,7 @@ test_loader = DataLoader(test_set, config['batch_size'], num_workers=4)
 #criterion = nn.L1Loss()
 criterion = EuclideanLoss()
 
-net = model.SimpleNetwork23b()
+net = model.SimpleNetwork23d()
 #net = resnet.ResidualNetwork()
 #net = model.ResidualNetwork2()
 #net = Conv2DNetwork()
@@ -49,7 +49,7 @@ net = model.SimpleNetwork23b()
 net.to(device)
 net.train()
 #optimizer = optim.SGD(net.parameters(), config["lr"], momentum=0.9)
-optimizer = optim.Adam(net.parameters(), lr=config['lr'], betas=(0.9,0.999), weight_decay=5e-5)
+optimizer = optim.Adam(net.parameters(), lr=config['lr'], betas=(0.9,0.999), weight_decay=1e-6)
 #lambda1 = lambda epoch: 0.75 ** (epoch // 100)
 #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
 milestone = [i * 200 for i in range(1, 50)]
@@ -143,7 +143,7 @@ for epoch in range(start_epoch+1, config["num_epochs"]):
                     'test_losses': test_losses,
                     'training_losses': training_losses,
                     },PATH)
-print(np.arange(20, epoch+1, 20))
+#test_xs = np.linspace(0, test_losses[-1], test_losses[-1])
 plt.plot(training_losses)
-plt.plot(test_losses)
+plt.plot(np.arange(0, epoch+1, 20), test_losses)
 plt.show()

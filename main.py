@@ -27,7 +27,7 @@ if os.path.exists("/home/oyvind/Blender-weldgroove/render/i.npy"):
 else:
     iteration = 1
 print(iteration)
-stop = 296
+stop = 312
 
 # sample angle between laser and weld groove normal
 norm_angle = np.radians(np.random.uniform(-4, 4))
@@ -50,7 +50,7 @@ if stop - iteration > 0:
         brace_rotation = np.random.randint(-10, 60) # (-20, 40) first 80 renders
         
         # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-        groove_dist = 0.008 # 0.003 for first 69 renders, 0.005 - 106, 0.004 162
+        groove_dist = 0.004 # 0.003 for first 69 renders, 0.005 - 106, 0.004 162
         
         while groove_angle + brace_rotation < 20:
             print("Current values gives no groove opening, sampling new values...")
@@ -58,7 +58,7 @@ if stop - iteration > 0:
             brace_rotation = np.random.randint(-20, 55)
         
         
-        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness = 0.026, groove_width=0.4, brace_rotation=brace_rotation)
+        weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness = 0.022, groove_width=0.4, brace_rotation=brace_rotation)
         # 0.015 til 223, 0.01 til 254
         
         
@@ -169,7 +169,7 @@ else:
     brace_rotation = np.random.randint(-20, 20)
     
     # Using several welds in one file led to crashes, so groove dist and accompanying weld is defined manually
-    groove_dist = 0.008
+    groove_dist = 0.004
     
     while groove_angle + brace_rotation < 20:
         print("Current values gives too small groove opening, sampling new values...")
@@ -177,7 +177,7 @@ else:
         brace_rotation = np.random.randint(-20, 45)
         
     
-    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness=0.026, groove_width = 0.4, brace_rotation=brace_rotation)
+    weld_groove = groove.WeldGroove(groove_angle=groove_angle, groove_dist=groove_dist, element_thickness=0.022, groove_width = 0.4, brace_rotation=brace_rotation)
 
     ### MATERIAL ###
 
