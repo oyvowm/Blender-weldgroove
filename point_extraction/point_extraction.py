@@ -110,7 +110,7 @@ if __name__ == "__main__":
     renders = [int(i) for i in renders]
     renders.sort()
     #renders.pop()
-    renders = renders[279:295] # to only process a certain subset
+    renders = renders[292:] # to only process a certain subset
     renders = [str(i) for i in renders]  
     print(renders)
 

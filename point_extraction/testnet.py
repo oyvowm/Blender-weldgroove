@@ -12,18 +12,19 @@ import time
 from conv2d import Conv2DNetwork
 import os
 
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = "cpu"
+print(device)
 
-
-net = model.SimpleNetwork23b()
+net = model.SimpleNetwork23d2()
+#print(net)
 #net = resnet.ResidualNetwork()
 #net = Conv2DNetwork()
 #et = model.FeedForwardNet()
 
-state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet62.pth')
+state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet125.pth')
 net.load_state_dict(state_dict['model_state_dict'])
-
+net.to(device)
 pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
 
 print('num parameters:',pytorch_total_params)
@@ -79,8 +80,10 @@ for groove in grooves:
     #t = transforms.Normalize((0.0013, 0.2211), (0.0281, 0.0194))
     #t = transforms.Normalize((0.0015, 0.2292), (0.0305, 0.0192))
     #t = transforms.Normalize((0.0017, 0.2310), (0.0308, 0.0195)) #
-    t = transforms.Normalize((0.0017, 0.2328), (0.0310, 0.0198))
-
+    #t = transforms.Normalize((0.0017, 0.2328), (0.0310, 0.0198))
+    #t = transforms.Normalize((0.0061, 0.2474), (0.0307, 0.0298)) # with noise
+    t = transforms.Normalize((0.0018, 0.2333), (0.0310, 0.0205))
+    
     hei = hei.unsqueeze(0)
     hei = hei.permute(1, 0, 2)
     hei = t(hei)
@@ -93,7 +96,8 @@ for groove in grooves:
     #hei = hei.type(torch.float32)
 
     hei = hei.unsqueeze(0)
-
+    hei = hei.to(device)
+    hei2 = hei2.to(device)
     net.eval()
     with torch.no_grad():
         start = time.time()
@@ -101,11 +105,12 @@ for groove in grooves:
         print(f'inference time: {time.time() - start}')
         ut2 = net(hei2)
 
-    hmm = ut.detach().numpy()
+    
+    hmm = ut.cpu().detach().numpy()
     hmm = hmm*1000
     hmm = hmm.squeeze()
 
-    hmm2 = ut2.detach().numpy()
+    hmm2 = ut2.cpu().detach().numpy()
     hmm2 = hmm2*1000
     hmm2 = hmm2.squeeze()
     #print(chei[0])
@@ -113,18 +118,22 @@ for groove in grooves:
 
     #print(chei)
     plt.scatter(chei[0], chei[1],s=1)
+    
     plt.scatter(hmm[:,0], hmm[:,1], s=20) # når output (B, 5, 2)
-    #plt.scatter(hmm[0], hmm[1], s=20) # når output (B, 2, 5)
+    
+    #plt.scatter(hmm[0], hmm[1], s=2) # når output (B, 2, 5)
     #plt.show()
 
-    plt.scatter(chei2[0], chei2[1],s=1)
-    plt.scatter(hmm2[:,0], hmm2[:,1], s=20) # når output (B, 5, 2)
+    #plt.scatter(chei2[0], chei2[1],s=1)
+    #plt.scatter(hmm2[:,0], hmm2[:,1], s=20) # når output (B, 5, 2)
 
     p = p * 1000
-    plt.scatter(p[0], p[1], s = 20)
+    #plt.scatter(p[0], p[1], s = 20)
 
 
     #plt.scatter(hmm2[0], hmm2[1], s=20)
+    path = groove + '.png'
+    plt.savefig('results/' + path)
     plt.show()
 
     #print(ut)

@@ -13,14 +13,14 @@ from loss_functions import EuclideanLoss
 import matplotlib.pyplot as plt
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #device = "cpu"
 
 print(device)
 
-torch.manual_seed(1) # set seed for reproducibility
+#torch.manual_seed(1) # set seed for reproducibility
 
-PATH = '/home/oyvind/Blender-weldgroove/ResNet_NewSet80.pth' #24 # 26
+PATH = '/home/oyvind/Blender-weldgroove/ResNet_NewSet125.pth' #24 # 26
 
 config = {
     "num_epochs": 1200,  
@@ -31,8 +31,8 @@ config = {
 # loss at epoch: 999 = 0.002346100521125746 1
 # num parameters: 13 369 958
 
-data = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, corrected=True, normalization='dataset', shuffle_gt_and_est=True, alternative_corner=False)
-test_set = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, corrected=True, normalization='dataset', test=True, shuffle_gt_and_est=True, alternative_corner=False)
+data = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, corrected=True, normalization='dataset', shuffle_gt_and_est=True)
+test_set = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render', noise=True, corrected=True, normalization='dataset', test=True, shuffle_gt_and_est=True)
 
 loader = DataLoader(data, config['batch_size'], shuffle=True, num_workers=4)
 test_loader = DataLoader(test_set, config['batch_size'], num_workers=4)
@@ -41,7 +41,7 @@ test_loader = DataLoader(test_set, config['batch_size'], num_workers=4)
 #criterion = nn.L1Loss()
 criterion = EuclideanLoss()
 
-net = model.SimpleNetwork23d()
+net = model.SimpleNetwork23d2()
 #net = resnet.ResidualNetwork()
 #net = model.ResidualNetwork2()
 #net = Conv2DNetwork()
@@ -49,7 +49,7 @@ net = model.SimpleNetwork23d()
 net.to(device)
 net.train()
 #optimizer = optim.SGD(net.parameters(), config["lr"], momentum=0.9)
-optimizer = optim.Adam(net.parameters(), lr=config['lr'], betas=(0.9,0.999), weight_decay=1e-6)
+optimizer = optim.Adam(net.parameters(), lr=config['lr'], betas=(0.9,0.999), weight_decay=5e-6) # 6
 #lambda1 = lambda epoch: 0.75 ** (epoch // 100)
 #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
 milestone = [i * 200 for i in range(1, 50)]
@@ -106,8 +106,8 @@ for epoch in range(start_epoch+1, config["num_epochs"]):
         net.eval()
         test_loss = 0.0
         with torch.no_grad():
-            for i, data in enumerate(test_loader):
-                x, y = data[0].to(device), data[-1].to(device)
+            for i, d in enumerate(test_loader):
+                x, y = d[0].to(device), d[-1].to(device)
                 outputs = net(x)
                 #print(outputs.shape)
                 #print(y.shape)
@@ -132,6 +132,9 @@ for epoch in range(start_epoch+1, config["num_epochs"]):
                 'test_losses': test_losses,
                 'training_losses': training_losses,
                 },PATH)
+
+            if epoch > 400:
+                break
 
 
     if (epoch+1) % 100 == 0:

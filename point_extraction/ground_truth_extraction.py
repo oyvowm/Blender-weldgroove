@@ -1,4 +1,4 @@
-from numpy import core
+from numpy import core, short
 import torch
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class GTPointExtractionDataset(Dataset):
-    def __init__(self, root, corrected=False):
+    def __init__(self, root, corrected=False, remove_outliers=False):
         self.root = root
         self.corrected = corrected
+        self.remove_outliers = remove_outliers
 
     def __getitem__(self, index):
         render = str((index // 20) + 1)
@@ -19,8 +20,22 @@ class GTPointExtractionDataset(Dataset):
             idx = '0' + idx
         
         path = os.path.join(self.root, render, 'processed_images' ,'points_' + idx)
+
+        #if not self.remove_outliers:
+        while os.path.exists(path + '/' + idx + '_GT.npy') == False:
+            print('path doesnt exist -- sampling a random index to use instead') 
+            i = np.random.randint(1,21)
+            i = str(i)
+            if len(i) == 1:
+                idx = idx[:-1] + i
+            else:
+                idx = idx[:-2] + i
+            path = os.path.join(self.root, render, 'processed_images' ,'points_' + idx)
+            print('new path: ', path)
+        
+
         if self.corrected:
-            print("corrected")
+            #print("corrected")
             gt = np.load(path + '/' + idx + '_GT_fixed.npy')
             est = np.load(path + '/' + idx + '_EST_fixed.npy')
         else:
@@ -42,189 +57,227 @@ class GTPointExtractionDataset(Dataset):
 
 
 if __name__ == "__main__":
-
+    """
+    New, improved method of ground truth extraction.
+    """
     corrected = True
 
     root = '/home/oyvind/Blender-weldgroove/render'
     dataset = GTPointExtractionDataset(root, corrected)
-    print('length dataset:', len(dataset))
-    img = 268 # 1340 first images ok
+    #print('length dataset:', len(dataset))
+    dataset[5]
+    img = 6220 #2209 # 3560 first images ok
     h = img
     # extract only ground-truth from the datataset
     while img < len(dataset):
-        print('i = ',img)
+        print('\n','i = ',img, '\n')
         g, est = dataset[img]
 
         # converts to [mm]
         g = g[1:] * 1000
         # finite differences
         d = []
+        sd = []
         for i in range(len(g[0])):
             if i == 0:
                 d.append((g[1][i+1] - g[1][i]) / (g[0][i+1] - g[0][i]))
+                sd.append(g[1][i+2] - 2 * g[1][i+1] + g[1][i])
             elif i == len(g[0]) - 1:
                 d.append((g[1][i] - g[1][i-1]) / (g[0][i] - g[0][i-1]))
+                sd.append(g[1][i] - 2 * g[1][i - 1] + g[1][i - 2])
             else:
                 d.append((g[1][i+1] - g[1][i-1]) / ((g[0][i+1] - g[0][i]) + (g[0][i] - g[0][i-1])))
+                sd.append(g[1][i + 1] - 2 * g[1][i] + g[1][i-1])
+        #print(len(d))
 
+        sd = np.array(sd)
+        mean_sd = np.mean(sd)  
+        std = np.std(sd)
+        #print(mean_sd)
+        #print(std)
+
+        render = (img // 20) + 1
+        print('render:', render)
+
+        scalar = 3.5 # vanligvis 3.5; spesielle tilfeller ---- render 77: 2.8; render 103: 2.5;
+        mas = [103, 104, 108, 109, 110, 114, 117, 118, 123, 128, 129, 133,
+               146, 159, 160, 161, 170, 174 ,175, 179, 183, 189, 200, 222, 
+               228, 236, 239, 251, 252, 259, 278, 280, 281, 284]
+        if render in mas:
+            print('special case - reducing scalar value')
+            scalar = 2.5
+        elif render == 115 or render == 140 or render == 221 or render == 273:
+            scalar = 1.5
+        elif render == 77:
+            scalar = 2.8
+        elif render == 149:
+            scalar = 4.5
+        elif render == 193 or render == 202 or render == 205 or render == 275:
+            scalar = 4.0
+        elif render == 285:
+            scalar = 2.
         
         
-        num_corner_points = 0
-        ite = 0
-        desired_corner_points = 9 # == 9 for first 67 renders
-        while num_corner_points < desired_corner_points:
-            corner_points = []
-            i = 0
-            while i < len(d) - 1: 
-                last = abs(d[i] - d[i-1])
-                #current = abs(d[i+1] - d[i]) # test ut ala: 
-                current = abs((d[i+1] - d[i] + d[i] - d[i-1]) / 2)
-                print(current)
-                #if current > 0.7:
-                    #print(current)
-                #print(f'last: {last} current: {current}')
-                if (current > 6 + ite):# and abs(current - last) > 0.5:
-                    corner_points.append(i)
-                    i+=1
-                else:
-                    i+=1
-            num_corner_points = len(corner_points)
-            #print(num_corner_points)
+        h = np.where(abs(sd) > mean_sd + scalar * std)
+        #print(sd[h])
 
-            #print(num_corner_points)
-            if num_corner_points > 15:
-                ite += 0.35
-                num_corner_points = 0
-                #print()
+        min_index = 100
+        if render == 94:
+            min_index = 300
+        h = h[0]
+        h = [i for i in h if i > min_index] # fails if early points are falsely identified as candidates
+
+        h_len = 30 # vanligvis 10
+
+        extra_len_img = [1583, 1709, 2178, 2209, 3093]
+        longer_len_render = [273, 284, 285]
+        extra_len_render = [114, 128, 146, 153, 160, 282, 292, 293, 299]
+        shorter_len_render = [143]
+
+        if img in extra_len_img or render in extra_len_render:
+            print('asdfost')
+            h_len = 30
+        elif img == 2120 or img == 2137 or img == 3085 or render in shorter_len_render:
+            h_len = 7
+        elif render in longer_len_render:
+            h_len = 17
+        elif render == 294:
+            h_len = 4
+        
+        while len(h) > h_len: # spesielle tilfeller ---- img 1583: 30; img 1709: 30;
+            print(h, 'asdf')
+            print('an excessive amount of corner points - increasing requirements...')
+            if render > 174:
+                scalar += 0.1
             else:
-                ite -= 0.04
-            #print(num_corner_points)
+                scalar += 0.3
+            h = np.where(abs(sd) > mean_sd + scalar * std)
+            h = h[0]
+            h = [i for i in h if i > min_index]
+        h_std = np.std(h)
+        print(h_std)
+        old_h = h
 
-      
+        reduced_scalar = False
 
-        #print(corner_points)
+        high_std = [110, 112]
+        low_std = [158, 196, 236, 237, 264]
+        lower_std = [170, 171, 174, 176, 195, 215, 227, 245, 254]
+        min_standard_deviation = 23 # 23
+        if render in high_std:
+            min_standard_deviation = 30
+        elif render in low_std:
+            min_standard_deviation = 20
+        elif render in lower_std:
+            min_standard_deviation = 15
+        
+        while h_std < min_standard_deviation: # 23
+            print('too few potential corner points - reducing requirements...')
+            if render > 174:
+                scalar -= 0.1
+            else:
+                scalar -= 0.5
+            h = np.where(abs(sd) > mean_sd + scalar * std)
+            h = h[0]
+            h = [i for i in h if i > min_index]
+            new_points = [i for i in h if i not in old_h]
+            h_std = np.std(h)
+            print(h_std)
+            reduced_scalar = True
 
-        # filters out non-corner points
-        j = 1
-        while len(corner_points) > 3:
-            i = 0
-            while i < (len(corner_points) - 1):
-                
-                if corner_points[i+1] - corner_points[i] < j:
-                    if j < 25:
-                        if i+2 != len(corner_points):
-                            corner_indices = [corner_points[i], corner_points[i+1]]
-                            y_vals = g.T[corner_indices]
-                            if i == 0:
-                                if abs(y_vals[:,1][1] - y_vals[:,1][0]) > 0.001:
-                                    y_max = np.argmax(y_vals, axis=0)[1]
-                                    corner_points[i] = corner_indices[y_max]
-                                    corner_points.pop(i+1)
-                                else:
-                                    corner_points.pop(i+1)
+        if reduced_scalar:
+            new_h = [i for i in old_h]
+            for point in new_points:
+                different_indices = np.array(old_h)[np.where(abs(old_h - point) > 5)[0]] 
+                if len(different_indices) > len(old_h) * 0.9:
+                    new_h.append(point)
+            h = sorted(new_h)
+        #else:
+        #   h = h.tolist()
 
-                            else: # i > 0:
-                                if abs(y_vals[:,1][1] - y_vals[:,1][0]) > 2.:
-                                    y_max = np.argmax(y_vals, axis=0)[1]
-                                    corner_points[i+1] = corner_indices[y_max]
-                                    corner_points.pop(i)  
-                                else:
-                                    corner_points.pop(i) 
-                        else:
-                            corner_points.pop(i)       
+
+        corner_points = []
+        print((h))
+        
+        sd_diff = 1.47
+        lower_sd_diff = [108, 109, 110, 111, 112, 113, 114, 115, 117, 118] #120, 121, 122, 123, 124]
+        special_case_sd_diff = [137, 176, 177, 179, 180, 183, 187, 195, 196, 
+                                198, 199, 201, 214, 215, 218, 222, 227, 234, 241, 250,
+                                254, 255, 261, 263, 264, 270, 272, 275, 289, 299, 302,
+                                309]
+        if render in special_case_sd_diff:
+            sd_diff = 1.
+        elif render in lower_sd_diff or render > 120:
+            sd_diff = 0.35
+
+        
+        print(sd_diff)
+        
+        while len(corner_points) < 3:
+            #print('asdf')
+            if len(corner_points) == 0:
+                #print('hhh')
+                i = 0
+                while h[i+1] - h[i] < 3:
+                    if g[1][h[i+1]] > g[1][h[i]]:
+                        h.pop(i)
                     else:
-                        corner_points.pop(i)
-                        
-                else:
-                    i+=1
-                #print(len(corner_points))
-
-            j += 1
-
-
-        
-        #corner_points = [corner_points[0], corner_points[-2], corner_points[-1]]
-
-        # moves the first corner point towards the left i t
-        #print(g.T[corner_points[0] - 1][1])
-        #print(g.T[corner_points[0]][1])
-        #print(corner_points)
-        while (abs(g.T[corner_points[0] - 1][1] - g.T[corner_points[0]][1]) < 0.50):
-
-            #print('adfgadsfg')
-            #print(abs(d[corner_points[0] - 1]) - abs(d[corner_points[0]]))
-            avg_deriv = 0
-            avg_y = g.T[corner_points[0] - 4:corner_points[0] - 1]
-            avg_y = np.average(avg_y[:,1])
-            #print('average y:' , avg_y)
-            for i in range(1, 10):
-                avg_deriv = avg_deriv + (d[corner_points[0] - i] - d[corner_points[0] - (i+1)])
-            #print(avg_deriv)
-            if (abs(avg_deriv) < 0.7) and (avg_y <= g.T[corner_points[0]][1]):
-                print(avg_deriv)
-                if g.T[corner_points[0] - 1][1] - g.T[corner_points[0]][1] < 0.05:
-                    #print('slope too small, breaking loop')
-                    break
-            if abs(d[corner_points[0] - 1]) - abs(d[corner_points[0]]) > 0.7 and g.T[corner_points[0] - 1][1] < g.T[corner_points[0]][1] and abs(avg_deriv) < 0.5:
-                #print('jadda')
-                break
-            if (avg_y > g.T[corner_points[0]][1] - 0.5) or (abs(g.T[corner_points[0] - 1][1] - g.T[corner_points[0] - 2][1]) > 3 * abs(g.T[corner_points[0]][1] - g.T[corner_points[0] - 1][1])):
-                print('moving corner point')
-                corner_points[0] = corner_points[0] - 1
-            else:
-                break
-            #if abs(g.T[corner_points[1] - 1][1] - g.T[corner_points[1] -2][1]) < abs(g.T[corner_points[1] + 1][1] - g.T[corner_points[1]][0]):
-        
-        #print(corner_points)
-
-        if len(corner_points) < 3:
-            #print('too few corner points, duplicating the first point')
-            corner_points.insert(1, corner_points[0])
-        # moves the second corner point towards the left if it is on the downward slope
-        steps = 0
-        
-        dist_right = np.linalg.norm(g.T[corner_points[1] + 1] - g.T[corner_points[1]])
-        while ((g.T[corner_points[1] - 1][1] - g.T[corner_points[1]][1]) > 0.11) and (((g.T[corner_points[1]][1] - g.T[corner_points[1] + 1][1]) / (g.T[corner_points[1] - 1][1] - g.T[corner_points[1]][1])) < 7):
-            print('æ')
-            if abs(g.T[corner_points[1] - 1][1] - g.T[corner_points[1] -2][1]) < abs(g.T[corner_points[1] + 1][1] - g.T[corner_points[1]][0]):
-                dist_one_left = np.linalg.norm(g.T[corner_points[1] - 1] - g.T[corner_points[1]])
-                dist_two_left = np.linalg.norm(g.T[corner_points[1] - 2] - g.T[corner_points[1] - 1])
-                #print(dist_two_left)
-                #print(dist_one_left)
-                avg_y = g.T[corner_points[1] - 4:corner_points[1] - 1]
-                avg_y = np.average(avg_y[:,1])
-                if dist_one_left > dist_right * 0.15 and dist_two_left < dist_one_left * 0.75:
-                    corner_points[1] = corner_points[1] - 1
-                    steps += 1
-                    print('eeeee')
-                elif abs((dist_two_left / dist_one_left) / (dist_one_left / dist_right)) > 0.8 and abs((dist_two_left / dist_one_left) / (dist_one_left / dist_right)) < 1.2:
-                    #print()
-                    #print((dist_two_left / dist_one_left))
-                    #print((dist_one_left / dist_right))
-                    #print(abs((dist_two_left / dist_one_left) / (dist_one_left / dist_right)))
-                    #print("slope approx. constant")
-                    corner_points[1] = corner_points[1] - 1
-                elif avg_y > g.T[corner_points[1]][1]:
-                    #print('avg to the left larger than y')
-                    corner_points[1] = corner_points[1] - 1
-                else:
-                    #print('breaking')
-                    break
-            else:
-                #slope_diff -= 0.01
-                #print('breaking')
-                break
-
-        #print(corner_points)
-        
-        #assert len(corner_points) == 3, f'ERROR: the number of corner points extracted using finite differences should equal 3 {corner_points}'
+                        h.pop(i+1)
+                corner_points.append(h[0])
+                print(h)
+            elif len(corner_points) == 1:
+                #print(h)
+                i = 1
+                removed = 0
+                while h[i+1] - h[i] < h_std + 30 and h[-1] - h[i+1] > 5:
+                    #print(h[i+1])
+                    #print(h[i])
+                    #print(removed)
+                    if h[i+1] - h[i] < 250 + removed: #33 første 179 # 127 til 295
+                        #print(abs(g[1][h[i] + 1] - g[1][h[i]]))
+                        #print(abs(g[1][h[i+1] + 1] - g[1][h[i+1]]))
+                        #print(removed / len(h), 'øøøøøø')
+                        if len(h) > 5 and removed / len(h) < 0.55: # if most of the candidates already are removed the scalar s is increased
+                            s = 1.
+                        else:
+                            s = 3
+                        if g[1][h[i+1]] > g[1][h[i]] or (abs(g[1][h[i] + 1] - g[1][h[i]]) * s < abs(g[1][h[i+1] + 1] - g[1][h[i+1]])):
+                            print('asdfasdf') 
+                            #print(abs(g[1][h[i+1]] - g[1][h[i]]) * 3)
+                            #print(abs(g[1][h[i+2]] - g[1][h[i+1]]))
+                            print('removing', h[i])
+                            h.pop(i)
+                            removed += 1
+                        elif abs(sd[h[i+1]]) > abs(sd[h[i]]) * sd_diff: #1.47
+                            print(abs(sd[h[i+1]]))
+                            print(abs(sd[h[i]]))
+                            print('jalla')
+                            print('removing:', h[i])
+                            h.pop(i)
+                            removed += 1
+                        else:
+                            #print(abs(sd[h[i+1]]))
+                            #print(abs(sd[h[i]]))
+                            print('asf')
+                            print('removing', h[i+1])
+                            h.pop(i+1)
+                            removed += 1
+                    else:
+                        #print('removing: ', h[i] )
+                        h.pop(i)
+                        if removed > 0:
+                            removed -= 1
+                    print(h)
+                corner_points.append(h[1])
             
-        #hei = [d[i] for i in corner_points]
-        #xs = [g[0][i] for i in corner_points]
-        #plt.scatter(xs, hei, s=1, color='g')
-    #    plt.show()
+            else:
+                corner_points.append(h[-1])
+            
+        
+        print(corner_points)
+                
 
-        # finds the corner points cooordinates, these are then used to define two lines
+         # finds the corner points cooordinates, these are then used to define two lines
         # whose intersection defines the final fourth corner point.
         groove_corners = g.T[corner_points]
         edge_point_brace = g[:,-5]
@@ -271,22 +324,22 @@ if __name__ == "__main__":
         
         #plt.scatter(cross_point[0], cross_point[1], s=20, color='r')
 
-          
-        if img % 1 == 0:
-            plt.scatter(g[0][corner_points[0]-30:corner_points[-1] + 10], g[1][corner_points[0]-30:corner_points[-1] + 10], s=1)
-            plt.scatter(groove_corners[:,0][1:-1], groove_corners[:,1][1:-1], s=20, color='g')
-            plt.show()
         
+        #if img % 1 == 0:
+        #    plt.scatter(g[0][corner_points[0]-30:corner_points[-1] + 10], g[1][corner_points[0]-30:corner_points[-1] + 10], s=1)
+        #    plt.scatter(groove_corners[:,0][1:-1], groove_corners[:,1][1:-1], s=20, color='g')
+        #    plt.show()
+        #break
         
         est = est[1:] * 1000
         
-        """
+        
         if img % 1 == 0:
-            plt.scatter(g[0], g[1], s=1)
-            #plt.scatter(est[0], est[1], s=1)
+            plt.scatter(g[0], g[1], s=1, color="r")
+            plt.scatter(est[0], est[1], s=1)
             plt.scatter(groove_corners[:,0], groove_corners[:,1], s=20, color='g')
             plt.show()
-        """
+        #
         
        
        # np.save()

@@ -3,7 +3,7 @@ from dis import dis
 from tkinter import E
 from turtle import update
 from types import new_class
-from cv2 import projectPoints
+#from cv2 import projectPoints
 from matplotlib import lines
 import numpy as np
 import torch
@@ -42,21 +42,56 @@ class LineSegment():
             if avg_dist < 0.08 + i * 0.01:
                 plt.clf()
                 
-                plt.scatter(groove[0], groove[1], s=1, c='gray')
+                plt.scatter(groove[0], groove[1], s=1, c='gray') # original groove
                 plt.scatter(self.groove[0], self.groove[1], s=1, c='g')
+                
+                plt.scatter(self.orig[:,0], self.orig[:,1], s=15, c='b')
+                plt.scatter(self.corner_points[:,0], self.corner_points[:,1], s=15, c='r')
                 if len(labels) == 5:
-                    plt.scatter(labels[:,0], labels[:,1], s=15, c='indigo')
+                    plt.scatter(labels[:,0], labels[:,1], s=10, c='yellow')
                     #plt.scatter(self.orig[:,0], self.orig[:,1], s=20)
-                plt.scatter(self.corner_points[:,0], self.corner_points[:,1], s=15, c='b')
-                plt.scatter(self.orig[:,0], self.orig[:,1], s=15, c='r')
                 #try:
                 #    plt.scatter(self.noise[0], self.noise[1], s=1)
                 #except:
                 #    print('no noise')
                 
-                path = path + '_corrected.png'
-                plt.savefig('results/corrected/' + path)
+                plt.xlabel('x [mm]')
+                plt.ylabel('y [mm]')
+                plt.grid()
+                
+                save_path = path[:-4] + '_corrected.png'
+                #print(save_path,'pathhhhh')
+                #plt.savefig('C:/Users/oyvin/Desktop/groove_images/' + save_path)
+
+
                 plt.show()
+
+
+
+                plt.clf()
+               
+                plt.scatter(groove[0][self.idx[0] - 20:self.idx[-2] + 20], groove[1][self.idx[0] - 20:self.idx[-2] + 20], s=1, c='gray') # original groove
+                plt.scatter(self.groove[0][self.idx[0] - 20:self.idx[-2] + 20], self.groove[1][self.idx[0] - 20:self.idx[-2] + 20], s=1, c='g')
+                
+                plt.scatter(self.orig[:-1,0], self.orig[:-1,1], s=15, c='b')
+                plt.scatter(self.corner_points[:-1,0], self.corner_points[:-1,1], s=15, c='r')
+                if len(labels) == 5:
+                    plt.scatter(labels[1:,0], labels[1:,1], s=10, c='yellow')
+                #plt.scatter(self.orig[:,0], self.orig[:,1], s=20)
+                #try:
+                #    plt.scatter(self.noise[0], self.noise[1], s=1)
+                #except:
+                #    print('no noise')
+                
+                plt.xlabel('x [mm]')
+                plt.ylabel('y [mm]')
+                plt.grid()
+
+                save_path = path[:-4] + '_corrected_close_up.png'
+                #plt.savefig('C:/Users/oyvin/Desktop/groove_images/' + save_path)
+
+
+                #plt.show()
                 break
             
     def divide_into_segments(self):
@@ -340,21 +375,27 @@ class LineSegment():
 
 
 if __name__ == '__main__':
-    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = "cpu"
     net = model.SimpleNetwork23b()
+    net = net.to(device)
     #net = resnet.ResidualNetwork()
+    # C:\Users\oyvin\Desktop\dfsdf
+    #state_dict = torch.load('C:/Users/oyvin/Desktop/dfsdf/ResNet_NewSet123.pth')
     state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet123.pth')
     net.load_state_dict(state_dict['model_state_dict'])
 
 
 
     grooves = os.listdir('/home/oyvind/Downloads/grooves')
+    #grooves = os.listdir('C:/Users/oyvin/Downloads/grooves')
     #print(grooves)
     #print(grooves[1:2])
 
     for groove in grooves[:]:
         groove_start_time = time.time()
 
+        #path = 'C:/Users/oyvin/Downloads/grooves/' + groove
         path = '/home/oyvind/Downloads/grooves/' + groove
         #print(path)
         hei = np.load(path)
@@ -376,23 +417,29 @@ if __name__ == '__main__':
 
 
         hei = hei.unsqueeze(0)
+        hei = hei.to(device)
 
         net.eval()
+        x = torch.rand(1, 2, 640)
+        x = x.to(device)
         with torch.no_grad():
+            for _ in range(5):
+                _ = net(x)
             inference_start = time.time()
             ut = net(hei)
-            print(f'inference time: {time.time() - inference_start}')
+            inference_time = time.time() - inference_start
+           # print(f'inference time: {inference_time}')
 
-        hmm = (ut.detach().numpy() * 1000).squeeze()
+        hmm = (ut.detach().cpu().numpy() * 1000).squeeze()
 
-        np.save('corner_result_' + groove, hmm)
+        #np.save('corner_result_' + groove, hmm)
         
 
         cheiflip = np.flip(chei, axis=1)
 
         # definer objekt
         line = LineSegment(groove, cheiflip, hmm, 0, display_line_segments=False)
-        print(f'\n groove iterative correction time = {time.time() - groove_start_time} \n')
+        print(f'\n groove iterative correction time = {time.time() - inference_start} \n')
 
     
         

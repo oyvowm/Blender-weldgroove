@@ -19,14 +19,15 @@ from torch.nn.modules.container import Sequential
 
 class EuclideanLoss(torch.nn.Module):
     
-    def __init__(self):
+    def __init__(self, test=False):
         super().__init__()
+        self.test = test
         
     def forward(self, x, y):
 
         # finn nærmest x punkter, hvis avstand > en grense -> inkluder i loss.
-
-        y = torch.transpose(y, 1, 2).contiguous()
+        if not self.test:
+            y = torch.transpose(y, 1, 2).contiguous()
         #print(y.is_contiguous())
         #print(y.shape, 'y')
         dist = torch.cdist(x, y, p=2)
@@ -35,7 +36,7 @@ class EuclideanLoss(torch.nn.Module):
         dist_diag = torch.diagonal(dist) # diagonal entries correspond to distance between pairs of row vectors.
         #print(dist_diag)
         #print(dist_diag[1:3])
-        dist_diag[1:3] = dist_diag[1:3] * 1.5 # scaling up the loss for the root corner points.
+        #dist_diag[1:3] = dist_diag[1:3] * 1.5 # scaling up the loss for the root corner points.
         #print(dist_diag)
         loss = dist_diag.mean()
         #print(loss,'loss')

@@ -7,7 +7,7 @@ import math
 import torch
 import dataset
 from torch.utils.data import DataLoader
-from asdf import GTPointExtractionDataset
+from ground_truth_extraction import GTPointExtractionDataset
 
 
 
@@ -21,7 +21,7 @@ def calculate_dataset_mean_and_std():
     """
     Calculates the mean and standard decation of the entire dataset
     """
-    data = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render',noise=True, return_gt=True, corrected=True, normalization='')
+    data = dataset.LaserPointDataset('/home/oyvind/Blender-weldgroove/render',noise=False, return_gt=True, corrected=True, normalization='')
     loader = DataLoader(data)
 
     mean_x = 0
@@ -59,7 +59,7 @@ def remove_outliers():
     root = '/home/oyvind/Blender-weldgroove/render'
     dataset = GTPointExtractionDataset(root, corrected=False)
     print('length dataset:', len(dataset))
-    img = 5700 # 1720 first images ok
+    img = 6000 # 1720 first images ok
     h = img
     # extract only ground-truth from the datataset
     while img < len(dataset):

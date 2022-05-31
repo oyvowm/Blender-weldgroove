@@ -8,9 +8,10 @@ import model
 import time
 from corner_correction_updated import LineSegment 
 
-
-root = '/home/oyvind/Downloads/grooves_second_dataset/4 RotPredOn/5 steps 100mm RPon'
-root = '/home/oyvind/Downloads/grooves_second_dataset/1 RotPredOff DirCorrOff/56 steps 10mm RPoff DCoff'
+#root = 'C:/Users/oyvin/Desktop/grooves/4 RotPredOn/9 steps 60mm RPon'
+#root = 'C:/Users/oyvin/Desktop/grooves/3 DirCorrOn/8 steps 70mm DCon'
+root = '/home/oyvind/Downloads/grooves_second_dataset/3 DirCorrOn/8 steps 70mm DCon'
+#root = '/home/oyvind/Downloads/grooves_second_dataset/1 RotPredOff DirCorrOff/56 steps 10mm RPoff DCoff'
 
 
 
@@ -31,51 +32,67 @@ class UnpickleGrooves():
         self.grooves = [groPoints, groCorners]
 
 
-ob = UnpickleGrooves()
-
-ob.unpickle_groove(root)
-
-print(len(ob.grooves[0][:]))
-print(ob.grooves[0][5].shape)
-
-net = model.SimpleNetwork23d()
-#net = resnet.ResidualNetwork()
-state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet76.pth')
+net = model.SimpleNetwork23b()
+#net = resnet.ResidualNetwork()    
+#state_dict = torch.load('C:/Users/oyvin/Desktop/dfsdf/ResNet_NewSet123.pth')
+state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet123.pth')
 net.load_state_dict(state_dict['model_state_dict'])
 
+ob = UnpickleGrooves()
+#path = 'C:/Users/oyvin/Desktop/grooves/' 
+path = '/home/oyvind/Downloads/grooves_second_dataset/'
+groove_folders = os.listdir(path)
 
-for i in range(len(ob.grooves[0])):
-    groove_start_time = time.time()
-    hei = ob.grooves[0][i][:,::2]
-    labels = ob.grooves[1][i][:,::2]
-    hei = hei.T
-    
-    hei = np.flip(hei, axis=1)
 
-    chei = hei
+for folder in groove_folders:
+    new_path = os.path.join(path, folder)
+    segments = os.listdir(new_path)
 
-    hei = hei/1000
-    hei = torch.from_numpy(np.array(hei))
-    hei = hei.type(torch.float32)
-    t = transforms.Normalize((0.0017, 0.2328), (0.0310, 0.0198))
-    hei = hei.unsqueeze(0)
-    hei = hei.permute(1, 0, 2)
-    hei = t(hei)
-    hei = hei.squeeze()
+    print(new_path)
+    for segment in segments:
+        segment_path = os.path.join(new_path, segment)
+        print('segment path:', segment_path)
 
-    hei = hei.unsqueeze(0)
+        ob.unpickle_groove(segment_path)
 
-    net.eval()
-    with torch.no_grad():
-        inference_start = time.time()
-        ut = net(hei)
-        print(f'inference time: {time.time() - inference_start}')
+        print(len(ob.grooves[0][:]))
+        print(ob.grooves[0][5].shape)
 
-    hmm = ut.detach().numpy()
-    hmm = hmm*1000
-    hmm = hmm.squeeze()
 
-    line = LineSegment(chei, hmm, 0, labels=labels)
-    print(f'\n groove iterative correction time = {time.time() - groove_start_time} \n')
-print()
 
+
+        for i in range(len(ob.grooves[0])):
+            groove_start_time = time.time()
+            hei = ob.grooves[0][i][:,::2]
+            labels = ob.grooves[1][i][:,::2]
+            hei = hei.T
+            
+            hei = np.flip(hei, axis=1)
+
+            chei = hei
+
+            hei = hei/1000
+            hei = torch.from_numpy(np.array(hei))
+            hei = hei.type(torch.float32)
+            #t = transforms.Normalize((0.0017, 0.2328), (0.0310, 0.0198))
+            t = transforms.Normalize((0.0018, 0.2333), (0.0310, 0.0205))
+            hei = hei.unsqueeze(0)
+            hei = hei.permute(1, 0, 2)
+            hei = t(hei)
+            hei = hei.squeeze()
+
+            hei = hei.unsqueeze(0)
+
+            net.eval()
+            with torch.no_grad():
+                inference_start = time.time()
+                ut = net(hei)
+                #print(f'inference time: {time.time() - inference_start}')
+
+            hmm = ut.detach().numpy()
+            hmm = hmm*1000
+            hmm = hmm.squeeze()
+
+            line = LineSegment('asdfasdf', chei, hmm, 0, labels=labels, display_line_segments=False)
+            #print(f'\n groove iterative correction time = {time.time() - groove_start_time} \n')
+        print()
