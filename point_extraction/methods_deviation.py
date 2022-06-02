@@ -14,7 +14,7 @@ from corner_correction_copy_2 import LineSegment
 root = '/home/oyvind/Downloads/grooves_second_dataset/3 DirCorrOn/8 steps 70mm DCon'
 #root = '/home/oyvind/Downloads/grooves_second_dataset/1 RotPredOff DirCorrOff/56 steps 10mm RPoff DCoff'
 
-
+print()
 
 class UnpickleGrooves():
     def __init__(self):
