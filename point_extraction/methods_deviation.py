@@ -14,7 +14,7 @@ from corner_correction_copy_2 import LineSegment
 root = '/home/oyvind/Downloads/grooves_second_dataset/3 DirCorrOn/8 steps 70mm DCon'
 #root = '/home/oyvind/Downloads/grooves_second_dataset/1 RotPredOff DirCorrOff/56 steps 10mm RPoff DCoff'
 
-print()
+
 
 class UnpickleGrooves():
     def __init__(self):
@@ -45,14 +45,27 @@ path = '/home/oyvind/Downloads/grooves_second_dataset/'
 groove_folders = os.listdir(path)
 
 
+step_sizes = ['10', '20', '30', '40', '50', '60', '70', '80', '100']
+sections = ['0', '1', '2']
+deviations = {step: {section: [] for section in sections} for step in step_sizes}
+
 for folder in groove_folders:
     new_path = os.path.join(path, folder)
     segments = os.listdir(new_path)
 
+
     print(new_path)
     for segment in segments:
+
+        step_size_idx = list(map(lambda x: x in segment, [step+'mm' for step in step_sizes]))
+        if not any(step_size_idx):    
+            continue
+        
+        print('using segment', segment)
+        step_size = step_sizes[np.where(step_size_idx)[0][0]]
+
         segment_path = os.path.join(new_path, segment)
-        print('segment path:', segment_path)
+        #print('segment path:', segment_path)
 
         ob.unpickle_groove(segment_path)
 
@@ -71,7 +84,6 @@ for folder in groove_folders:
         current_idx = 0
         for i in range(6):
             idx = current_idx + block_length_list[i]
-            print()
             if i < 3:
                 blocks_grooves[str(i)] = ob.grooves[0][current_idx:idx]
                 blocks_labels[str(i)] = ob.grooves[1][current_idx:idx]
@@ -95,7 +107,7 @@ for folder in groove_folders:
         #print('len block 1',len(blocks_grooves['1']))
         #print('len block 2',len(blocks_grooves['2']))
 
-        print()
+        #print()
 
         for section in blocks_grooves:
             method_deviation = 0
@@ -135,8 +147,14 @@ for folder in groove_folders:
                 method_deviation += corner_diff
             method_deviation = method_deviation / len(blocks_grooves[section])
             print(f'The average deviation for section {section} is: {method_deviation}')
+
+            deviations[step_size][str(section)].append(method_deviation)
+np.save('method_deviations.npy', deviations)
+
+print()
                 #print(len(blocks_grooves[section]))
-    """
+
+"""
 
         for i in range(len(ob.grooves[0])):
             groove_start_time = time.time()

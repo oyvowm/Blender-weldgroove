@@ -64,7 +64,7 @@ class LineSegment():
                 #plt.savefig('C:/Users/oyvin/Desktop/groove_images/' + save_path)
 
 
-                plt.show()
+                #plt.show()
 
 
 
