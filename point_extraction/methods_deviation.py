@@ -46,7 +46,7 @@ groove_folders = os.listdir(path)
 
 
 step_sizes = ['10', '20', '30', '40', '50', '60', '70', '80', '100']
-sections = ['0', '1', '2']
+sections = ['0', '1', '2', '3', '4', '5']
 deviations = {step: {section: [] for section in sections} for step in step_sizes}
 
 for folder in groove_folders:
@@ -74,45 +74,47 @@ for folder in groove_folders:
         block_length = int(len(ob.grooves[0][:]) / 6)
         block_length_list = [block_length] * 6
         rest =  len(ob.grooves[0][:]) % 6
-        if rest < 3:
-            block_length_list[1:rest+1] = [i + 1 for i in block_length_list[1:rest+1]]
-        else:
-            block_length_list[:rest] = [i + 1 for i in block_length_list[:rest]]
+        #if rest < 5:
+        #    block_length_list[1:rest+1] = [i + 1 for i in block_length_list[1:rest+1]]
+        #else:
+        block_length_list[:rest] = [i + 1 for i in block_length_list[:rest]]
 
         blocks_grooves = {}
         blocks_labels = {}
         current_idx = 0
         for i in range(6):
             idx = current_idx + block_length_list[i]
-            if i < 3:
-                blocks_grooves[str(i)] = ob.grooves[0][current_idx:idx]
-                blocks_labels[str(i)] = ob.grooves[1][current_idx:idx]
-            else:
-                if i == 3:
-                    blocks_grooves['2'].extend(ob.grooves[0][current_idx:idx])
-                    blocks_labels['2'].extend(ob.grooves[1][current_idx:idx])
-                elif i == 4:
-                    blocks_grooves['1'].extend(ob.grooves[0][current_idx:idx])
-                    blocks_labels['1'].extend(ob.grooves[1][current_idx:idx])
-                else:
-                    blocks_grooves['0'].extend(ob.grooves[0][current_idx:])
-                    blocks_labels['0'].extend(ob.grooves[1][current_idx:])
+            blocks_grooves[str(i)] = ob.grooves[0][current_idx:idx]
+            blocks_labels[str(i)] = ob.grooves[1][current_idx:idx]
+            #else:
+            #    if i == 3:
+            #        blocks_grooves['2'].extend(ob.grooves[0][current_idx:idx])
+            #        blocks_labels['2'].extend(ob.grooves[1][current_idx:idx])
+            #    elif i == 4:
+            #        blocks_grooves['1'].extend(ob.grooves[0][current_idx:idx])
+            #        blocks_labels['1'].extend(ob.grooves[1][current_idx:idx])
+            #    else:
+            #        blocks_grooves['0'].extend(ob.grooves[0][current_idx:])
+            #        blocks_labels['0'].extend(ob.grooves[1][current_idx:])
             current_idx = idx
 
 
 
 
 
-        #print('len block 0',len(blocks_grooves['0']))
-        #print('len block 1',len(blocks_grooves['1']))
-        #print('len block 2',len(blocks_grooves['2']))
+        print('len block 0',len(blocks_grooves['0']))
+        print('len block 1',len(blocks_grooves['1']))
+        print('len block 2',len(blocks_grooves['2']))
+        print('len block 3',len(blocks_grooves['3']))
+        print('len block 4',len(blocks_grooves['4']))
+        print('len block 5',len(blocks_grooves['5']))
 
         #print()
 
         for section in blocks_grooves:
             method_deviation = 0
             for i in range(len(blocks_grooves[section])):
-                print(i)
+                #print(i)
                 groove = blocks_grooves[section][i][:,::2].T
                 labels = blocks_labels[section][i][:,::2]
 
@@ -146,50 +148,9 @@ for folder in groove_folders:
                 corner_diff = np.linalg.norm(labels[1:4]-line.corner_points[1:4])
                 method_deviation += corner_diff
             method_deviation = method_deviation / len(blocks_grooves[section])
-            print(f'The average deviation for section {section} is: {method_deviation}')
+            #print(f'The average deviation for section {section} is: {method_deviation}')
 
             deviations[step_size][str(section)].append(method_deviation)
 np.save('method_deviations.npy', deviations)
 
-print()
-                #print(len(blocks_grooves[section]))
-
-"""
-
-        for i in range(len(ob.grooves[0])):
-            groove_start_time = time.time()
-            hei = ob.grooves[0][i][:,::2]
-            labels = ob.grooves[1][i][:,::2]
-            hei = hei.T
-            
-            hei = np.flip(hei, axis=1)
-
-            chei = hei
-
-            hei = hei/1000
-            hei = torch.from_numpy(np.array(hei))
-            hei = hei.type(torch.float32)
-            #t = transforms.Normalize((0.0017, 0.2328), (0.0310, 0.0198))
-            t = transforms.Normalize((0.0018, 0.2333), (0.0310, 0.0205))
-            hei = hei.unsqueeze(0)
-            hei = hei.permute(1, 0, 2)
-            hei = t(hei)
-            hei = hei.squeeze()
-
-            hei = hei.unsqueeze(0)
-
-            net.eval()
-            with torch.no_grad():
-                inference_start = time.time()
-                ut = net(hei)
-                #print(f'inference time: {time.time() - inference_start}')
-
-            hmm = ut.detach().numpy()
-            hmm = hmm*1000
-            hmm = hmm.squeeze()
-
-            line = LineSegment('asdfasdf', chei, hmm, 0, labels=labels, display_line_segments=False)
-            #print(f'\n groove iterative correction time = {time.time() - groove_start_time} \n')
-        print()
-
-"""
+#print()
