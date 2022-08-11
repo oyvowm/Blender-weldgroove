@@ -362,7 +362,7 @@ if __name__ == '__main__':
     loader = DataLoader(data, 64, shuffle=True, num_workers=4)
     print(loader)
     #model = ResidualNetwork()
-    model = SimpleNetwork23d3()
+    model = SimpleNetwork23b()
     
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 

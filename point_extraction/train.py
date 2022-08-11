@@ -28,6 +28,7 @@ config = {
     "lr": 1e-3,
     "continue_training": True,
 }
+
 # loss at epoch: 999 = 0.002346100521125746 1
 # num parameters: 13 369 958
 

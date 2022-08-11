@@ -141,7 +141,7 @@ if __name__ == "__main__":
             # loads the transformation matrix from world origin to laser
             tmatrix = np.load(images_path + '/' + img_num + '.npy')
 
-            # inverts the transformation matrix
+            # invert the transformation matrix:
             rotation_matrix = tmatrix[0:3,0:3]
 
             # since scale transform cannot be applied in Blender for light objects, it's applied here

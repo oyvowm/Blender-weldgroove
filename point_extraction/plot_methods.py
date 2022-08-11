@@ -40,6 +40,7 @@ section4_std = np.std(np.array(section4))
 section5_std = np.std(np.array(section5))
 section6_std = np.std(np.array(section6))
 
+print((section1_avg + section6_avg) / 2, 'section avg')
 # x position of bars
 #r1 = np.arange(6)
 r1 = [x for x in range(1,7)]

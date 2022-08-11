@@ -61,9 +61,7 @@ class LineSegment():
             
     def divide_into_segments(self):
         self.idx = np.searchsorted(self.groove[0], self.corner_points.T[0], side="left")
-        #print(self.idx, 'idx')
         if self.idx[-1] - self.idx[-2] < 50:
-            #print("asdfasdasdafda")
             try:
                 self.idx[-1] = len(self.groove[0]) - 1
             except:
@@ -78,7 +76,6 @@ class LineSegment():
         else:
             move_limit = 0.2
         if ((self.dist_moved[index] + self.dist_moved[index+1]) / 2) < move_limit:
-            #print('skipping segment', index)
             return
         if abs(self.angle[index]) < 0.008 and self.dist_moved[index] < 1:
             #print(f'angle for index {index} is {self.angle[index]}, skipping segment')
@@ -97,7 +94,6 @@ class LineSegment():
         slope_est, intercept_est = line[0], line[2]
 
         if index == 1:# and iterations == 0:
-            #print('***************')
             segment1 = self.line_segments[0]
             segment2 = self.line_segments[2]
 
@@ -123,7 +119,6 @@ class LineSegment():
             point2 = new_point2
 
         if len(x) < 3: # == 0 før
-            #print('æææææææ')
             # if the angles are wrong during the first iteration causing the root corners to collapse towards
             # a single point, the x- and y-values are manually defined as to give a constant line at this point.
             x = np.array((self.corner_points[index:index+1, 0] - 1, self.corner_points[index:index+1, 0] + 1))
@@ -201,7 +196,6 @@ class LineSegment():
             
             while len(non_noise[0]) < len(x) * (limit - (iterations * reduction)):
                 #print(len(non_noise[0]),'len1')
-                #print(len(x),'len2')
                 noise_threshold += 0.05
                 #print(noise_threshold)
                 #non_noise = np.where(abs(y - y_est_new) < noise_threshold)

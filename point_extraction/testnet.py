@@ -16,13 +16,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = "cpu"
 print(device)
 
-net = model.SimpleNetwork23d2()
+net = model.SimpleNetwork23b()
 #print(net)
 #net = resnet.ResidualNetwork()
 #net = Conv2DNetwork()
 #et = model.FeedForwardNet()
 
-state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet125.pth')
+state_dict = torch.load('/home/oyvind/Blender-weldgroove/ResNet_NewSet123.pth')
 net.load_state_dict(state_dict['model_state_dict'])
 net.to(device)
 pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
